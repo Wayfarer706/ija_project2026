@@ -10,8 +10,9 @@ import java.util.PriorityQueue;
 import ija.ija2025.homework2.common.Position;
 import ija.ija2025.homework2.common.GameEvent;
 import ija.ija2025.homework2.tool.GameObserver;
+import ija.ija2025.homework2.tool.Observable;
 
-public class Game {
+public class Game implements Observable {
     private final String[] mapDefinition;
     private final Map<Position, Unit> units = new HashMap<>();
     private final List<GameObserver> observers = new ArrayList<>();
@@ -31,11 +32,18 @@ public class Game {
         return unit;
     }
 
+    @Override
     public void addObserver(GameObserver observer) {
         observers.add(observer);
     }
 
-    protected void notifyObservers() {
+    @Override
+    public void removeObserver(GameObserver observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers() {
         GameEvent event = new GameEvent();
         for (GameObserver observer : observers) {
             observer.update(event);
