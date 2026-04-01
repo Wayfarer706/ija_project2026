@@ -13,9 +13,9 @@
 
 ---
 
-## 2. Pathfinding (BFS / Dijkstra) - IN PROGRESS
-* **Tool:** [To be filled]
-* **Date:** [To be filled]
-* **Prompt:** > [To be filled by teammate]
-* **Student Modification:** [To be filled: Explain how the algorithm was adapted for terrain costs (forests, mountains) and impassable obstacles]
-* **Generation Ratio:** [To be filled] %
+## 2. Pathfinding (Dijkstra Algorithm) & Movement Logic
+* **Tool:** Gemini
+* **Date:** April 1, 2026
+* **Prompt:** > "Implement the Dijkstra algorithm in the getReachableTiles method to calculate reachable positions based on movement range and specific terrain costs."
+* **Student Modification:** The AI provided the core while-loop logic for the Dijkstra priority queue. I heavily refactored the generated code to fit the project's specific MVC architecture. I manually implemented the `getTerrainAt` map parsing logic, the `moveUnit`, and refactored the terrain cost calculations out of the game engine and into the `Unit` class.
+* **Generation Ratio:** 40 % (core Dijkstra algorithm and coordinate logic), 60 % (student refactoring, map parsing, movement implementation, and OOP architectural design).
