@@ -1,4 +1,4 @@
-package ija.ija2025.homework2;
+package ija.ija2025.homework2.tests;
 
 import ija.ija2025.homework2.common.Position;
 import ija.ija2025.homework2.game.Game;
