@@ -124,4 +124,107 @@ public class AdditionalTest {
         Assertions.assertFalse(reachable.contains(new Position(-1, 0)));
         Assertions.assertFalse(reachable.contains(new Position(0, -1)));
     }
+
+    @Test
+    @DisplayName("B1: tank can reach a tile only by going through the gap in a wall")
+    void testTankUsesGapInWall() {
+        String[] map = {
+            "P W P P P",
+            "P W P W P",
+            "P P P W P",
+            "W W P W P",
+            "P P P P P"
+        };
+
+        Game game = GameFactory.createGame(map);
+
+        var tank = game.createUnit("Tank", "P1", 0, 0);
+        List<Position> reachable = game.getReachableTiles(tank.getPosition());
+
+        Assertions.assertTrue(
+            reachable.contains(new Position(0, 2)),
+            "Tank should reach the tile only by using the opening in the wall"
+        );
+    }
+
+    @Test
+    @DisplayName("B2: full wall blocks movement even when the target is close enough")
+    void testFullWallBlocksTarget() {
+        String[] map = {
+            "P W P P P",
+            "P W P P P",
+            "P W P P P",
+            "P W P P P",
+            "P W P P P"
+        };
+
+        Game game = GameFactory.createGame(map);
+
+        var tank = game.createUnit("Tank", "P1", 2, 0);
+        List<Position> reachable = game.getReachableTiles(tank.getPosition());
+
+        Assertions.assertFalse(
+            reachable.contains(new Position(2, 2)),
+            "Tank should not reach a tile begind a full wall of water"
+        );
+    }
+
+    @Test
+    @DisplayName("B3: tank chooses a cheaper path around fores instead of the direct expensive path")
+    void testTankChoosesCheaperPath() {
+        String[] map = {
+            "P F F F P",
+            "P P P P P",
+            "W W W W P",
+            "P P P P P",
+            "P P P P P"
+        };
+
+        Game game = GameFactory.createGame(map);
+
+        var tank = game.createUnit("Tank", "P1", 0, 0);
+        List<Position> reachable = game.getReachableTiles(tank.getPosition());
+
+        Assertions.assertTrue(
+            reachable.contains(new Position(0, 4)),
+            "Tand should reach the target by taking the cheaper plain route around the forest"
+        );
+    }
+
+    @Test 
+    @DisplayName("B4: Pathfinding works correctly from the bottom-right corner on a 5x5 map")
+    void testBottomRightCornerOnFiveByFiveMap() {
+        String[] map = {
+            "P P P P P",
+            "P W W W P",
+            "P P P W P",
+            "P W P P P",
+            "P P P P P"
+        };
+
+        Game game = GameFactory.createGame(map);
+
+        var infantry = game.createUnit("Infantry", "P1", 4, 4);
+        List<Position> reachable = game.getReachableTiles(infantry.getPosition());
+
+        Assertions.assertTrue(
+            reachable.contains(new Position(4, 3)),
+            "Infantry should move left from the bottom-right corner"
+        );
+
+        Assertions.assertTrue(
+            reachable.contains(new Position(3, 4)),
+            "Infantry should move up from the bottom-right corner"
+        );
+
+        Assertions.assertTrue(
+            reachable.contains(new Position(1, 4)),
+            "Infantry should reach the upper edge within its movement limit"
+        );
+
+        Assertions.assertFalse(
+            reachable.contains(new Position(0, 4)),
+            "Infantry should not reach tiles that are farther than its movement limit"
+        );
+    }
 }
