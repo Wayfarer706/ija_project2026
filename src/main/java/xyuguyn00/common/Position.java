@@ -1,4 +1,4 @@
-package ija.ija2025.homework2.common;
+package main.java.xyuguyn00.common;
 
 import java.util.Objects;
 

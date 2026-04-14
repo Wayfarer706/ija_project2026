@@ -1,4 +1,4 @@
-package ija.ija2025.homework2.game;
+package xyuguyn00.game;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -7,14 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-import ija.ija2025.homework2.common.Position;
-import ija.ija2025.homework2.common.GameEvent;
-import ija.ija2025.homework2.tool.GameObserver;
-import ija.ija2025.homework2.tool.Observable;
+import xyuguyn00.common.Position;
+import xyuguyn00.common.GameEvent;
+import xyuguyn00.tool.GameObserver;
+import xyuguyn00.tool.Observable;
+import xyuguyn00.model.TerrainData;
 
 /**
  * Main engine and state manager for the game.
- * Responsible for map boundaries, unit placement, and validating movement logic.
+ * Now fully decoupled: relies on injected UnitFactory and TerrainData rules.
  */
 public class Game implements Observable {
     private final String[] mapDefinition;
@@ -23,18 +24,33 @@ public class Game implements Observable {
     private final int width;
     private final int height;
 
-    public Game(String[] mapDefinition) {
+    // Data-driven dependencies
+    private final UnitFactory unitFactory;
+    private final Map<String, TerrainData> terrainRules;
+
+    // Maps the characters from the mapDefinition array to the names in terrain.tsv
+    private static final Map<Character, String> TERRAIN_CHAR_MAP = Map.of(
+        'P', "Pláň",
+        'F', "Les",
+        'M', "Hora",
+        'W', "Voda",
+        'C', "Město",
+        'T', "Továrna",
+        'H', "Velitelství"
+    );
+
+    public Game(String[] mapDefinition, UnitFactory unitFactory, Map<String, TerrainData> terrainRules) {
         this.mapDefinition = mapDefinition;
         this.width = mapDefinition[0].replace(" ", "").length();
         this.height = mapDefinition.length;
+        this.unitFactory = unitFactory;
+        this.terrainRules = terrainRules;
     }
 
-    /**
-     * Acts as a simple factory for initializing units and registering them to the board state.
-     */
     public Unit createUnit(String type, String player, int x, int y) {
         Position position = new Position(x, y);
-        Unit unit = new Unit(type, player, position);
+        // Engine delegates instantiation to the Factory
+        Unit unit = unitFactory.createUnit(type, player, position);
         units.put(position, unit);
         return unit;
     }
@@ -42,14 +58,10 @@ public class Game implements Observable {
     // --- MVC Observer Pattern Implementation ---
 
     @Override
-    public void addObserver(GameObserver observer) {
-        observers.add(observer);
-    }
+    public void addObserver(GameObserver observer) { observers.add(observer); }
 
     @Override
-    public void removeObserver(GameObserver observer) {
-        observers.remove(observer);
-    }
+    public void removeObserver(GameObserver observer) { observers.remove(observer); }
 
     @Override
     public void notifyObservers() {
@@ -70,30 +82,21 @@ public class Game implements Observable {
         }
     }
 
-    /**
-     * Executes a unit's movement if the target destination is within its reachable tiles.
-     * Triggers an observer notification upon a successful state change.
-     */
     public boolean moveUnit(Position from, Position to) {
         Unit unit = units.get(from);
         if (unit == null) return false;
 
         List<Position> reachablePositions = getReachableTiles(from);
         if (reachablePositions.contains(to)) {
-            // Update internal grid mapping
             units.remove(from);
             unit.setPosition(to);
             units.put(to, unit);
-
             notifyObservers();
             return true;
         }
         return false;
     }
 
-    /**
-     * Helper method to safely parse the map definition array.
-     */
     private char getTerrainAt(int row, int col) {
         if (row >= 0 && row < height && col >= 0 && col < width) {
             return mapDefinition[row].replace(" ", "").charAt(col);
@@ -110,9 +113,8 @@ public class Game implements Observable {
         if (unit == null) return new ArrayList<>();
 
         int maxMove = unit.getMaxMove();
-        
         Map<Position, Integer> costMap = new HashMap<>();
-        
+
         // Evaluates the cheapest movement paths first to satisfy Dijkstra's shortest-path logic
         PriorityQueue<Node> pq = new PriorityQueue<>(Comparator.comparingInt(n -> n.cost));
 
@@ -133,21 +135,25 @@ public class Game implements Observable {
                 int nextRow = current.pos.getX() + dRow[i]; 
                 int nextCol = current.pos.getY() + dCol[i]; 
 
-                char terrain = getTerrainAt(nextRow, nextCol);
+                char terrainChar = getTerrainAt(nextRow, nextCol);
                 
-                if (terrain != '\0') {
-                    // The unit dictates its own terrain traversal costs
-                    int stepCost = unit.getTerrainCost(terrain);
+                if (terrainChar != '\0') {
+                    // Look up the dynamic terrain rules based on the character map
+                    String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
+                    TerrainData terrainData = terrainRules.get(terrainName);
 
-                    if (stepCost != -1) { 
-                        int newCost = current.cost + stepCost;
-                        
-                        Position nextPos = new Position(nextRow, nextCol);
-                        
-                        // Proceed if the unit has enough movement points and this is the cheapest route found
-                        if (newCost <= maxMove && newCost < costMap.getOrDefault(nextPos, Integer.MAX_VALUE)) {
-                            costMap.put(nextPos, newCost);
-                            pq.add(new Node(nextPos, newCost));
+                    if (terrainData != null) {
+                        // Pass the entire data object to the unit
+                        int stepCost = unit.getTerrainCost(terrainData);
+
+                        if (stepCost != -1) { 
+                            int newCost = current.cost + stepCost;
+                            Position nextPos = new Position(nextRow, nextCol);
+                            
+                            if (newCost <= maxMove && newCost < costMap.getOrDefault(nextPos, Integer.MAX_VALUE)) {
+                                costMap.put(nextPos, newCost);
+                                pq.add(new Node(nextPos, newCost));
+                            }
                         }
                     }
                 }
@@ -156,7 +162,5 @@ public class Game implements Observable {
         return new ArrayList<>(costMap.keySet());
     }
 
-    public String[] getMapDefinition() {
-        return mapDefinition;
-    }
+    public String[] getMapDefinition() { return mapDefinition; }
 }
