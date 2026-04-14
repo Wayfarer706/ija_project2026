@@ -163,4 +163,16 @@ public class Game implements Observable {
     }
 
     public String[] getMapDefinition() { return mapDefinition; }
+
+    // --- Getters for the View Layer ---
+    
+    public int getWidth() { return width; }
+    public int getHeight() { return height; }
+    
+    /**
+     * Allows the View to check for units without exposing the internal HashMap.
+     */
+    public Unit getUnitAt(Position pos) {
+        return units.get(pos);
+    }
 }
