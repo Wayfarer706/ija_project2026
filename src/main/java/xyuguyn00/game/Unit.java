@@ -1,67 +1,51 @@
 package main.java.xyuguyn00.game;
 
 import main.java.xyuguyn00.common.Position;
+import main.java.xyuguyn00.model.UnitData;
+import main.java.xyuguyn00.model.TerrainData;
 
 /**
  * Represents an active entity on the game board.
- * Encapsulates its own state (health, position) and traversal rules,
+ * Traversal rules and stats are now driven dynamically by the injected UnitData.
  */
 public class Unit {
     private Position position;
-    private final String type;
+    private final UnitData data;
     private final String player;
     private int hp;
-    private final int maxMove;
 
-    public Unit(String type, String player, Position position) {
-        this.type = type;
+    public Unit(UnitData data, String player, Position position) {
+        this.data = data;
         this.player = player;
         this.position = position;
-        this.hp = 100;
-
-        // Defines maximum movement limits based on unit class.
-        this.maxMove = switch(type) {
-            case "Tank" -> 6;
-            case "Infantry" -> 3;
-            default -> 0;
-        };
+        this.hp = 100; 
     }
 
     public Position getPosition() { return position; }
     public void setPosition(Position position) { this.position = position; }
-    public String getType() { return type; }
+    public String getType() { return data.unitName(); }
     public String getPlayer() { return player; }
     public int getHp() { return hp; }
-    public int getMaxMove() { return maxMove; }
+    public int getMaxMove() { return data.movementRange(); }
+    public String getMovementType() { return data.movementType(); }
 
     /**
-     * Determines the action points required for this specific unit to enter a given terrain.
-     * Returning -1 indicates the terrain is completely impassable.
-     * P = Plain, F = Forest, M = Mountain, W = Water
+     * Calculates the cost to enter a tile dynamically based on the unit's movement type
+     * (e.g., Pěší vs Vozidlo) and the specific terrain's rules.
      */
-    public int getTerrainCost(char terrain) {
-        return switch(this.type) {
-            case "Tank" -> switch(terrain) {
-                case 'P' -> 1; 
-                case 'F' -> 2; 
-                default -> -1;
-            };
-            case "Infantry" -> switch(terrain) {
-                case 'P', 'F' ->  1; 
-                case 'M' ->  2;     
-                default -> -1;     
-            };
-            default -> -1;
-        };
+    public int getTerrainCost(TerrainData terrain) {
+        if (terrain == null) return -1;
+        
+        if ("Vozidlo".equals(this.data.movementType())) {
+            return terrain.vehicleCost();
+        } else if ("Pěší".equals(this.data.movementType())) {
+            return terrain.infantryCost();
+        }
+        return -1; // Unknown movement type or impassable
     }
 
-    /**
-     * Formats the unit state to match the output requirements of the test suite.
-     */
     @Override
     public String toString() {
-        int positionX = position.getX();
-        int positionY = position.getY();
-        return String.format("{%s[%d, %d][%d]}", type, positionX, positionY, hp);
+        return String.format("{%s[%d, %d][%d]}", data.unitName(), position.getX(), position.getY(), hp);
     }
 }
