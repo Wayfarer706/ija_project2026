@@ -1,6 +1,6 @@
 # AI Audit Log - Team xyuguyn00 
 
-**Last Updated:** April 10, 2026
+**Last Updated:** April 15, 2026
 
 ---
 
@@ -53,4 +53,13 @@
 * **Date:** April 14, 2026
 * **Prompt:** > "Generate a pom.xml file to support maven and JUnit 5."
 * **Student Modification:** The AI generated the complete Maven configuration file, including the `maven-compiler-plugin`, JavaFX dependencies, and JUnit 5 test scope. I copy-pasted the file directly into the project root and executed `mvn clean compile` to synchronize the workspace.
+* **Generation Ratio:** 100 % AI.
+
+---
+
+## 6. Turn Management & Sidebar UI
+* **Tool:** Gemini
+* **Date:** April 15, 2026
+* **Prompt:** > "I think the game will look like this. At the right we have main board and on the left we have two cards representing a Player 1 and Player 2. We will indicate the player's turn by highlighting the borders of player's cards. Initially it will only have Player 1 and Player 2 text, but in the future we will include info about the gold amount etc."
+* **Student Modification:** The AI provided the initial JavaFX layout template for the `PlayerSidebar` component.
 * **Generation Ratio:** 100 % AI.
