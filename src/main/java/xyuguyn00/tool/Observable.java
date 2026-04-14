@@ -1,4 +1,4 @@
-package main.java.xyuguyn00.tool;
+package xyuguyn00.tool;
 
 public interface Observable {
     void addObserver(GameObserver observer);

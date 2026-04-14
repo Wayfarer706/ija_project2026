@@ -1,4 +1,4 @@
-package main.java.xyuguyn00.game;
+package xyuguyn00.game;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-import main.java.xyuguyn00.common.Position;
-import main.java.xyuguyn00.common.GameEvent;
-import main.java.xyuguyn00.tool.GameObserver;
-import main.java.xyuguyn00.tool.Observable;
-import main.java.xyuguyn00.model.TerrainData;
+import xyuguyn00.common.Position;
+import xyuguyn00.common.GameEvent;
+import xyuguyn00.tool.GameObserver;
+import xyuguyn00.tool.Observable;
+import xyuguyn00.model.TerrainData;
 
 /**
  * Main engine and state manager for the game.

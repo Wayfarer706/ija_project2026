@@ -1,7 +1,7 @@
-package main.java.xyuguyn00.game;
+package xyuguyn00.game;
 
-import main.java.xyuguyn00.common.Position;
-import main.java.xyuguyn00.model.UnitData;
+import xyuguyn00.common.Position;
+import xyuguyn00.model.UnitData;
 
 import java.util.Map;
 

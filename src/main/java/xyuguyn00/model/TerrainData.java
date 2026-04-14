@@ -1,4 +1,4 @@
-package main.java.xyuguyn00.model;
+package xyuguyn00.model;
 
 /**
  * Immutable record representing the static rules for a specific terrain type.

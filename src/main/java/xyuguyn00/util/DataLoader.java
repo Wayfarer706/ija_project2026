@@ -1,6 +1,6 @@
-package main.java.xyuguyn00.util;
+package xyuguyn00.util;
 
-import main.java.xyuguyn00.model.*;
+import xyuguyn00.model.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

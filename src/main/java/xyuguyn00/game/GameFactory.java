@@ -1,8 +1,8 @@
-package main.java.xyuguyn00.game;
+package xyuguyn00.game;
 
-import main.java.xyuguyn00.model.TerrainData;
-import main.java.xyuguyn00.model.UnitData;
-import main.java.xyuguyn00.util.DataLoader;
+import xyuguyn00.model.TerrainData;
+import xyuguyn00.model.UnitData;
+import xyuguyn00.util.DataLoader;
 
 import java.util.Map;
 
