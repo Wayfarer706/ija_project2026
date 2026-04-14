@@ -1,12 +1,11 @@
-package test.java.xyuguyn00.util;
+package xyuguyn00.util;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import main.java.xyuguyn00.model.*;
-import main.java.xyuguyn00.util.DataLoader;
+import xyuguyn00.model.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -1,4 +1,4 @@
-package main.java.xyuguyn00.common;
+package xyuguyn00.common;
 
 import java.util.Objects;
 
