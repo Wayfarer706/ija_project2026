@@ -23,6 +23,7 @@ public class Game implements Observable {
     private final List<GameObserver> observers = new ArrayList<>();
     private final int width;
     private final int height;
+    private String currentPlayer = "Player 1"; 
 
     // Data-driven dependencies
     private final UnitFactory unitFactory;
@@ -84,12 +85,13 @@ public class Game implements Observable {
 
     public boolean moveUnit(Position from, Position to) {
         Unit unit = units.get(from);
-        if (unit == null) return false;
+        if (unit == null || unit.hasMoved()) return false;
 
         List<Position> reachablePositions = getReachableTiles(from);
         if (reachablePositions.contains(to)) {
             units.remove(from);
             unit.setPosition(to);
+            unit.setMoved(true);
             units.put(to, unit);
             notifyObservers();
             return true;
@@ -138,6 +140,22 @@ public class Game implements Observable {
                 char terrainChar = getTerrainAt(nextRow, nextCol);
                 
                 if (terrainChar != '\0') {
+                    Position nextPos = new Position(nextRow, nextCol);
+
+                    // --- Unit Collision & Stacking Rules ---
+                    Unit occupyingUnit = units.get(nextPos);
+                    if (occupyingUnit != null) {
+                        boolean isFriendly = occupyingUnit.getPlayer().equals(unit.getPlayer());
+                        boolean isSpecialBuilding = (terrainChar == 'C' || terrainChar == 'T' || terrainChar == 'H');
+
+                        // Block movement through this tile if:
+                        // 1. It is an enemy unit.
+                        // 2. It is a friendly unit NOT standing on a City, Factory, or HQ.
+                        if (!isFriendly || !isSpecialBuilding) {
+                            continue; // Skip this tile completely
+                        }
+                    }
+
                     // Look up the dynamic terrain rules based on the character map
                     String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
                     TerrainData terrainData = terrainRules.get(terrainName);
@@ -148,7 +166,6 @@ public class Game implements Observable {
 
                         if (stepCost != -1) { 
                             int newCost = current.cost + stepCost;
-                            Position nextPos = new Position(nextRow, nextCol);
                             
                             if (newCost <= maxMove && newCost < costMap.getOrDefault(nextPos, Integer.MAX_VALUE)) {
                                 costMap.put(nextPos, newCost);
@@ -174,5 +191,23 @@ public class Game implements Observable {
      */
     public Unit getUnitAt(Position pos) {
         return units.get(pos);
+    }
+
+    // --- Turn Management ---
+
+    public String getCurrentPlayer() {
+        return currentPlayer;
+    }
+
+    public void endTurn() {
+        // Toggle the active player
+        currentPlayer = currentPlayer.equals("Player 1") ? "Player 2" : "Player 1";
+        
+        // Loop through every unit on the board and reset their action state
+        for (Unit unit : units.values()) {
+            unit.setMoved(false);
+        }
+        
+        notifyObservers(); // Tell the UI that the turn has changed
     }
 }

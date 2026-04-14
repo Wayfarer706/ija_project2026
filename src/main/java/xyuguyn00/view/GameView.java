@@ -36,27 +36,20 @@ public class GameView extends GridPane implements GameObserver {
         render();
     }
 
-    /**
-     * Handles what happens when a user clicks a specific tile.
-     */
     private void handleTileClick(Position clickedPos) {
         if (selectedPosition == null) {
-            // No unit is currently selected. Try to select one.
             Unit unit = game.getUnitAt(clickedPos);
-            if (unit != null) {
+            // Unit must exist, belong to active player, AND not have moved yet
+            if (unit != null && unit.getPlayer().equals(game.getCurrentPlayer()) && !unit.hasMoved()) {
                 selectedPosition = clickedPos;
-                // Ask the engine's Dijkstra algorithm where this unit can go
                 reachablePositions = game.getReachableTiles(clickedPos);
-                render(); // Redraw the board to show the highlights
+                render(); 
             }
         } else {
-            // A unit is already selected. Try to move it to the clicked tile.
             if (reachablePositions.contains(clickedPos)) {
-                // If the move is valid, the engine will update the state and call notifyObservers()
                 game.moveUnit(selectedPosition, clickedPos);
             }
             
-            // Clear the selection state regardless of whether they moved or clicked an invalid space
             selectedPosition = null;
             reachablePositions.clear();
             render();
@@ -75,18 +68,16 @@ public class GameView extends GridPane implements GameObserver {
                 Position pos = new Position(row, col); 
 
                 StackPane tile = new StackPane();
-                
-                // Attach the mouse click listener to this specific tile
                 tile.setOnMouseClicked(event -> handleTileClick(pos));
 
-                // Draw the Background Terrain
+                // 1. Draw the Background Terrain
                 Rectangle bg = new Rectangle(tileSize, tileSize);
                 bg.setFill(getTerrainColor(terrainChar));
                 bg.setStroke(Color.BLACK); 
                 bg.setStrokeWidth(0.5);
                 tile.getChildren().add(bg);
 
-                // Draw Visual Highlights (Selection & Movement Paths)
+                // 2. Draw Visual Highlights
                 if (pos.equals(selectedPosition)) {
                     Rectangle highlight = new Rectangle(tileSize, tileSize);
                     highlight.setFill(Color.rgb(255, 255, 0, 0.4)); 
@@ -99,7 +90,7 @@ public class GameView extends GridPane implements GameObserver {
                     tile.getChildren().add(pathTarget);
                 }
 
-                // Draw the Unit
+                // 3. Draw the Unit
                 Unit unit = game.getUnitAt(pos);
                 if (unit != null) {
                     Circle token = new Circle(tileSize / 2.5);
@@ -107,9 +98,18 @@ public class GameView extends GridPane implements GameObserver {
                     token.setStroke(Color.WHITE);
                     token.setStrokeWidth(2);
 
+                    // Dim the unit if it has already moved
+                    if (unit.hasMoved()) {
+                        token.setOpacity(0.4); 
+                    }
+
                     Text label = new Text(unit.getType().substring(0, 1));
                     label.setFill(Color.WHITE);
                     label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+                    
+                    if (unit.hasMoved()) {
+                        label.setOpacity(0.4);
+                    }
                     
                     tile.getChildren().addAll(token, label);
                 }
