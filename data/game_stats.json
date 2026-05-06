@@ -11,7 +11,7 @@
   "buildings": [
     { "x": 1, "y": 1, "type": "Město", "owner": "Neutral" },
     { "x": 3, "y": 3, "type": "Město", "owner": "Neutral" },
-    { "x": 2, "y": 2, "type": "Továrna", "owner": "Neutral" },
+    { "x": 2, "y": 2, "type": "Továrna", "owner": "Player 1" }, 
     { "x": 4, "y": 0, "type": "Velitelství", "owner": "Player 1" },
     { "x": 0, "y": 4, "type": "Velitelství", "owner": "Player 2" } 
   ],

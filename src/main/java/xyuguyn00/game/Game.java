@@ -108,7 +108,7 @@ public class Game implements Observable {
             notifyObservers();
             return true;
         }
-        
+
         return false;
     }
 
@@ -126,10 +126,10 @@ public class Game implements Observable {
             return false; // Engine rejects out-of-range attacks!
         }
 
-        // 1. Primary Attack (Attacker shoots first)
+        // Primary Attack (Attacker shoots first)
         resolveStrike(attacker, defender, defenderPos);
 
-        // 2. Counter-Attack (If defender survived)
+        // Counter-Attack (If defender survived)
         if (!defender.isDead()) {
             // Check if attacker is within the defender's attack range
             int distance = Math.abs(attackerPos.getX() - defenderPos.getX()) + 
@@ -141,7 +141,7 @@ public class Game implements Observable {
             }
         }
 
-        // 3. Resolve Deaths
+        // Resolve Deaths
         if (defender.isDead()) units.remove(defenderPos);
         if (attacker.isDead()) units.remove(attackerPos);
 
@@ -295,6 +295,30 @@ public class Game implements Observable {
 
     public String[] getMapDefinition() { return mapDefinition; }
 
+    // --- Factory Shop Logic ---
+
+    public int getUnitCost(String type) {
+        return unitFactory.getUnitCost(type);
+    }
+
+    public boolean purchaseUnit(String unitType, Position pos) {
+        int cost = getUnitCost(unitType);
+        int currentFunds = playerFunds.getOrDefault(currentPlayer, 0);
+
+        if (currentFunds >= cost) {
+            playerFunds.put(currentPlayer, currentFunds - cost);
+            
+            Unit newUnit = unitFactory.createUnit(unitType, currentPlayer, pos); 
+            
+            newUnit.setMoved(true); 
+            units.put(pos, newUnit);
+            
+            notifyObservers();
+            return true;
+        }
+        return false;
+    }
+
     // --- Getters for the View Layer ---
     
     public int getWidth() { return width; }
@@ -337,7 +361,9 @@ public class Game implements Observable {
         // Calculate Income (1000 per owned building)
         for (Building b : buildings.values()) {
             if (b.getOwner().equals(player)) {
-                currentFunds += 1000;
+                if (b.getType().equals("Město")) {
+                    currentFunds += 1000;
+                }
             }
         }
 

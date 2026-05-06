@@ -25,4 +25,9 @@ public class UnitFactory {
         }
         return new Unit(data, player, position);
     }
+
+    public int getUnitCost(String type) {
+        if (!unitRules.containsKey(type)) return 9999;
+        return unitRules.get(type).cost();
+    }
 }

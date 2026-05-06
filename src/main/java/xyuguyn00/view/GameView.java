@@ -140,7 +140,7 @@ public class GameView extends GridPane implements GameObserver {
 
         Building targetBuilding = game.getBuildingAt(previewPosition);
         if (targetBuilding != null && attacker.getType().equals("Pěchota") && !targetBuilding.getOwner().equals(attacker.getPlayer())) {
-            MenuItem captureItem = new MenuItem("Zabrat (" + targetBuilding.getCapturePoints() + " CP)");
+            MenuItem captureItem = new MenuItem("Capture (" + targetBuilding.getCapturePoints() + " CP)");
             captureItem.setOnAction(e -> {
                 Position moveFrom = selectedPosition;
                 Position moveTo = previewPosition;
@@ -204,7 +204,29 @@ public class GameView extends GridPane implements GameObserver {
                     Position pos = new Position(row, col); 
 
                     StackPane tile = new StackPane();
-                    tile.setOnMouseClicked(event -> handleTileClick(pos, event));
+                    tile.setOnMouseClicked(e -> { 
+                        Position clickedPos = pos;
+                        Unit clickedUnit = game.getUnitAt(clickedPos);
+
+                        if (selectedPosition == null) {
+                            if (clickedUnit != null && clickedUnit.getPlayer().equals(game.getCurrentPlayer()) && !clickedUnit.hasMoved()) {
+                                selectedPosition = clickedPos;
+                                
+                                reachablePositions = game.getReachableTiles(clickedPos); 
+                                
+                                render(); 
+                            } else if (clickedUnit == null) {
+                                Building b = game.getBuildingAt(clickedPos);
+                                if (b != null && b.getType().equals("Továrna") && b.getOwner().equals(game.getCurrentPlayer())) {
+                                    showFactoryMenu(clickedPos, tile, e.getScreenX(), e.getScreenY());
+                                } else {
+                                    clearSelection();
+                                }
+                            }
+                        } else {
+                            handleTileClick(pos, e);
+                        }
+                    });
 
                     // Background
                     Rectangle bg = new Rectangle(tileSize, tileSize);
@@ -296,6 +318,35 @@ public class GameView extends GridPane implements GameObserver {
                 }
             }
         });
+    }
+
+    private void showFactoryMenu(Position pos, javafx.scene.Node tile, double screenX, double screenY) {
+        javafx.scene.control.ContextMenu shopMenu = new javafx.scene.control.ContextMenu();
+
+        // The units available to build
+        String[] buildableUnits = {"Pěchota", "Tank", "Dělostřelectvo"};
+
+        for (String type : buildableUnits) {
+            int cost = game.getUnitCost(type);
+            javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(type + " (" + cost + " G)");
+            
+            // Disable the button if the player doesn't have enough gold
+            if (game.getPlayerFunds(game.getCurrentPlayer()) < cost) {
+                item.setDisable(true);
+            }
+            
+            item.setOnAction(event -> {
+                game.purchaseUnit(type, pos);
+                shopMenu.hide();
+            });
+            shopMenu.getItems().add(item);
+        }
+
+        javafx.scene.control.MenuItem cancelItem = new javafx.scene.control.MenuItem("Zrušit");
+        cancelItem.setOnAction(event -> shopMenu.hide());
+        shopMenu.getItems().add(cancelItem);
+
+        shopMenu.show(tile, screenX, screenY);
     }
 
     private Color getTerrainColor(char t) {
