@@ -103,33 +103,75 @@ public class Game implements Observable {
     }
 
     // --- Combat Logic ---
-    
+
     public boolean attack(Position attackerPos, Position defenderPos) {
         Unit attacker = units.get(attackerPos);
         Unit defender = units.get(defenderPos);
 
-        // Validate attack: units must exist, and attacker cannot be exhausted
-        if (attacker == null || defender == null || attacker.hasMoved()) return false;
+        if (attacker == null || defender == null) return false;
 
-        // Lookup base damage in the matrix
-        int damage = 0;
+        int attackDist = Math.abs(attackerPos.getX() - defenderPos.getX()) + 
+                         Math.abs(attackerPos.getY() - defenderPos.getY());
+        if (attackDist < attacker.getMinAttackRange() || attackDist > attacker.getMaxAttackRange()) {
+            return false; // Engine rejects out-of-range attacks!
+        }
+
+        // 1. Primary Attack (Attacker shoots first)
+        resolveStrike(attacker, defender, defenderPos);
+
+        // 2. Counter-Attack (If defender survived)
+        if (!defender.isDead()) {
+            // Check if attacker is within the defender's attack range
+            int distance = Math.abs(attackerPos.getX() - defenderPos.getX()) + 
+                           Math.abs(attackerPos.getY() - defenderPos.getY());
+                           
+            if (distance >= defender.getMinAttackRange() && distance <= defender.getMaxAttackRange()) {
+                // Roles are reversed: Defender shoots back at the Attacker
+                resolveStrike(defender, attacker, attackerPos); 
+            }
+        }
+
+        // 3. Resolve Deaths
+        if (defender.isDead()) units.remove(defenderPos);
+        if (attacker.isDead()) units.remove(attackerPos);
+
+        attacker.setMoved(true); // Commits the attacker's turn
+        notifyObservers();
+        return true;
+    }
+
+    /**
+     * Calculates and applies damage based on the strict deterministic formula:
+     * Damage = Floor(BaseDamage * (AttackerHP / 100) * (1 - TerrainBonus * 0.1))
+     */
+    private void resolveStrike(Unit attacker, Unit defender, Position defenderPos) {
+        // Find base damage from the matrix
+        int baseDamage = 0;
         for (UnitDamageData rule : damageRules) {
             if (rule.attacker().equals(attacker.getType()) && rule.defender().equals(defender.getType())) {
-                damage = rule.damage();
+                baseDamage = rule.damage();
                 break;
             }
         }
 
-        defender.takeDamage(damage);
-        attacker.setMoved(true); // Attacking exhausts the unit for the turn
-
-        // Handle death
-        if (defender.isDead()) {
-            units.remove(defenderPos);
+        // Find terrain defense bonus
+        char terrainChar = getTerrainAt(defenderPos.getX(), defenderPos.getY());
+        String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
+        int defenseBonus = 0;
+        if (terrainRules.containsKey(terrainName)) {
+            defenseBonus = terrainRules.get(terrainName).defenseBonus();
         }
 
-        notifyObservers();
-        return true;
+        // Apply the mathematical formula
+        double hpMultiplier = attacker.getHp() / 100.0;
+        double terrainMultiplier = 1.0 - (defenseBonus * 0.1);
+        
+        int finalDamage = (int) Math.floor(baseDamage * hpMultiplier * terrainMultiplier);
+
+        // Ensure we always do at least 0 damage (no healing from negative damage)
+        if (finalDamage < 0) finalDamage = 0;
+
+        defender.takeDamage(finalDamage);
     }
 
     private char getTerrainAt(int row, int col) {
@@ -149,8 +191,6 @@ public class Game implements Observable {
 
         int maxMove = unit.getMaxMove();
         Map<Position, Integer> costMap = new HashMap<>();
-
-        // Evaluates the cheapest movement paths first to satisfy Dijkstra's shortest-path logic
         PriorityQueue<Node> pq = new PriorityQueue<>(Comparator.comparingInt(n -> n.cost));
 
         costMap.put(start, 0);
@@ -161,12 +201,9 @@ public class Game implements Observable {
 
         while (!pq.isEmpty()) {
             Node current = pq.poll();
-
-            // Skip paths that are more expensive than already discovered routes
             if (current.cost > costMap.getOrDefault(current.pos, Integer.MAX_VALUE)) continue;
 
             for (int i = 0; i < 4; i++) {
-                // Map arrays are accessed via [row][column]
                 int nextRow = current.pos.getX() + dRow[i]; 
                 int nextCol = current.pos.getY() + dCol[i]; 
 
@@ -175,26 +212,19 @@ public class Game implements Observable {
                 if (terrainChar != '\0') {
                     Position nextPos = new Position(nextRow, nextCol);
 
-                    // --- Unit Collision & Stacking Rules ---
                     Unit occupyingUnit = units.get(nextPos);
                     if (occupyingUnit != null) {
                         boolean isFriendly = occupyingUnit.getPlayer().equals(unit.getPlayer());
-                        boolean isSpecialBuilding = (terrainChar == 'C' || terrainChar == 'T' || terrainChar == 'H');
-
-                        // Block movement through this tile if:
-                        // 1. It is an enemy unit.
-                        // 2. It is a friendly unit NOT standing on a City, Factory, or HQ.
-                        if (!isFriendly || !isSpecialBuilding) {
-                            continue; // Skip this tile completely
+                        // Enemy units act as a solid wall. 
+                        if (!isFriendly) {
+                            continue; 
                         }
                     }
 
-                    // Look up the dynamic terrain rules based on the character map
                     String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
                     TerrainData terrainData = terrainRules.get(terrainName);
 
                     if (terrainData != null) {
-                        // Pass the entire data object to the unit
                         int stepCost = unit.getTerrainCost(terrainData);
 
                         if (stepCost != -1) { 
@@ -209,7 +239,17 @@ public class Game implements Observable {
                 }
             }
         }
-        return new ArrayList<>(costMap.keySet());
+
+        // Filter the reachable tiles. You can only end your turn on an empty tile, 
+        // or the exact tile you started on (moving 0 spaces).
+        List<Position> validDestinations = new ArrayList<>();
+        for (Position p : costMap.keySet()) {
+            if (p.equals(start) || units.get(p) == null) {
+                validDestinations.add(p);
+            }
+        }
+        
+        return validDestinations;
     }
 
     public String[] getMapDefinition() { return mapDefinition; }
