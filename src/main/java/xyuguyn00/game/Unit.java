@@ -12,7 +12,7 @@ public class Unit {
     private Position position;
     private final UnitData data;
     private final String player;
-    private int hp;
+    private int hp = 100;            
     private boolean hasMoved = false; // Track if the unit has already moved this turn
 
     public Unit(UnitData data, String player, Position position) {
@@ -31,6 +31,12 @@ public class Unit {
     public String getMovementType() { return data.movementType(); }
     public boolean hasMoved() { return hasMoved; }
     public void setMoved(boolean moved) { this.hasMoved = moved; }
+    public boolean isDead() { return hp <= 0; }
+
+    public void takeDamage(int damage) {
+        this.hp -= damage;
+        if(this.hp < 0) this.hp = 0;
+    }
 
     /**
      * Calculates the cost to enter a tile dynamically based on the unit's movement type

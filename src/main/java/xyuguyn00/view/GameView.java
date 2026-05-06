@@ -1,5 +1,8 @@
 package xyuguyn00.view;
 
+import javafx.geometry.Side;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -19,7 +22,7 @@ import java.util.List;
 
 /**
  * The graphical representation of the game board.
- * Handles rendering, mouse interactivity, and path visualization.
+ * Handles rendering, mouse interactivity, path visualization, and the Action Menu.
  */
 public class GameView extends GridPane implements GameObserver {
     private final Game game;
@@ -28,6 +31,7 @@ public class GameView extends GridPane implements GameObserver {
     // --- Interactivity State ---
     private Position selectedPosition = null;
     private List<Position> reachablePositions = new ArrayList<>();
+    private ContextMenu activeMenu = null;
 
     public GameView(Game game) {
         this.game = game;
@@ -36,24 +40,86 @@ public class GameView extends GridPane implements GameObserver {
         render();
     }
 
-    private void handleTileClick(Position clickedPos) {
+    private void handleTileClick(Position clickedPos, StackPane clickedNode) {
+        if (activeMenu != null && activeMenu.isShowing()) {
+            activeMenu.hide();
+            activeMenu = null;
+            return; 
+        }
+
         if (selectedPosition == null) {
             Unit unit = game.getUnitAt(clickedPos);
-            // Unit must exist, belong to active player, AND not have moved yet
             if (unit != null && unit.getPlayer().equals(game.getCurrentPlayer()) && !unit.hasMoved()) {
                 selectedPosition = clickedPos;
                 reachablePositions = game.getReachableTiles(clickedPos);
                 render(); 
             }
         } else {
-            if (reachablePositions.contains(clickedPos)) {
-                game.moveUnit(selectedPosition, clickedPos);
-            }
+            Unit targetUnit = game.getUnitAt(clickedPos);
             
-            selectedPosition = null;
-            reachablePositions.clear();
-            render();
+            // Check if user clicked an enemy unit
+            if (targetUnit != null && !targetUnit.getPlayer().equals(game.getCurrentPlayer())) {
+                // Calculate Manhattan distance
+                int distance = Math.abs(selectedPosition.getX() - clickedPos.getX()) + 
+                               Math.abs(selectedPosition.getY() - clickedPos.getY());
+                               
+                if (distance == 1) {
+                    showAttackMenu(selectedPosition, clickedPos, clickedNode);
+                } else {
+                    clearSelection(); // Too far to attack
+                }
+            } 
+            // Otherwise, check if user clicked a valid empty tile to move
+            else if (reachablePositions.contains(clickedPos)) {
+                showActionMenu(clickedPos, clickedNode);
+            } else {
+                clearSelection();
+            }
         }
+    }
+
+    private void showActionMenu(Position targetPos, StackPane anchorNode) {
+        activeMenu = new ContextMenu();
+        activeMenu.setStyle("-fx-base: #3c3c3c; -fx-font-size: 14px; -fx-font-weight: bold;");
+
+        MenuItem waitItem = new MenuItem("Wait (Confirm Move)");
+        waitItem.setOnAction(e -> {
+            game.moveUnit(selectedPosition, targetPos);
+            clearSelection();
+        });
+
+        MenuItem cancelItem = new MenuItem("Cancel");
+        cancelItem.setOnAction(e -> clearSelection());
+
+        activeMenu.getItems().addAll(waitItem, cancelItem);
+        activeMenu.show(anchorNode, Side.RIGHT, 0, 0);
+    }
+
+    private void showAttackMenu(Position attackerPos, Position defenderPos, StackPane anchorNode) {
+        activeMenu = new ContextMenu();
+        activeMenu.setStyle("-fx-base: #8b0000; -fx-font-size: 14px; -fx-font-weight: bold;"); 
+
+        MenuItem attackItem = new MenuItem("Attack Enemy");
+        attackItem.setOnAction(e -> {
+            game.attack(attackerPos, defenderPos);
+            clearSelection();
+        });
+
+        MenuItem cancelItem = new MenuItem("Cancel");
+        cancelItem.setOnAction(e -> clearSelection());
+
+        activeMenu.getItems().addAll(attackItem, cancelItem);
+        activeMenu.show(anchorNode, Side.RIGHT, 0, 0);
+    }
+
+    private void clearSelection() {
+        selectedPosition = null;
+        reachablePositions.clear();
+        if (activeMenu != null) {
+            activeMenu.hide();
+            activeMenu = null;
+        }
+        render();
     }
 
     private void render() {
@@ -68,7 +134,7 @@ public class GameView extends GridPane implements GameObserver {
                 Position pos = new Position(row, col); 
 
                 StackPane tile = new StackPane();
-                tile.setOnMouseClicked(event -> handleTileClick(pos));
+                tile.setOnMouseClicked(event -> handleTileClick(pos, tile));
 
                 // 1. Draw the Background Terrain
                 Rectangle bg = new Rectangle(tileSize, tileSize);
@@ -98,20 +164,27 @@ public class GameView extends GridPane implements GameObserver {
                     token.setStroke(Color.WHITE);
                     token.setStrokeWidth(2);
 
-                    // Dim the unit if it has already moved
-                    if (unit.hasMoved()) {
-                        token.setOpacity(0.4); 
-                    }
-
                     Text label = new Text(unit.getType().substring(0, 1));
                     label.setFill(Color.WHITE);
                     label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
                     
+                    // --- New HP Visualizer ---
+                    Text hpLabel = new Text(unit.getHp() + " HP");
+                    hpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+                    hpLabel.setTranslateY(18); // Push it below the center
+                    
+                    // Color code the HP text based on remaining health
+                    if (unit.getHp() > 50) hpLabel.setFill(Color.LIGHTGREEN);
+                    else if (unit.getHp() > 20) hpLabel.setFill(Color.YELLOW);
+                    else hpLabel.setFill(Color.RED);
+
                     if (unit.hasMoved()) {
+                        token.setOpacity(0.4); 
                         label.setOpacity(0.4);
+                        hpLabel.setOpacity(0.4);
                     }
                     
-                    tile.getChildren().addAll(token, label);
+                    tile.getChildren().addAll(token, label, hpLabel);
                 }
 
                 this.add(tile, col, row); 

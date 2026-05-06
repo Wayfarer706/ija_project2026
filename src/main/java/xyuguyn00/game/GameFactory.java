@@ -1,9 +1,11 @@
 package xyuguyn00.game;
 
 import xyuguyn00.model.TerrainData;
+import xyuguyn00.model.UnitDamageData;
 import xyuguyn00.model.UnitData;
 import xyuguyn00.util.DataLoader;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,15 +22,16 @@ public class GameFactory {
      * @return A fully initialized Game engine ready for use.
      * @throws Exception if data files cannot be found or parsed.
      */
-    public static Game createGame(String[] mapDefinition, String terrainFilePath, String unitsFilePath) throws Exception {
+    public static Game createGame(String[] mapDefinition, String terrainFilePath, String unitsFilePath, String damagePath) throws Exception {
         // Load the dynamic rules from the data directory
         Map<String, TerrainData> terrainRules = DataLoader.loadTerrain(terrainFilePath);
         Map<String, UnitData> unitRules = DataLoader.loadUnits(unitsFilePath);
+        List<UnitDamageData> damageRules = DataLoader.loadDamage(damagePath);
 
         // Initialize the internal factories
         UnitFactory unitFactory = new UnitFactory(unitRules);
 
-        // Construct and return the core engine
-        return new Game(mapDefinition, unitFactory, terrainRules);
+        // Construct and return the core engine with ALL rules
+        return new Game(mapDefinition, unitFactory, terrainRules, damageRules);
     }
 }

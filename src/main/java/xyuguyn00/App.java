@@ -29,7 +29,8 @@ public class App extends Application {
             Game game = GameFactory.createGame(
                 mapDefinition, 
                 "data/terrain.tsv", 
-                "data/units.tsv"
+                "data/units.tsv",
+                "data/units-damage.tsv"
             );
 
             // --- Spawn some test units ---

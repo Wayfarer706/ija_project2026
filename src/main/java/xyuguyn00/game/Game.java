@@ -12,6 +12,7 @@ import xyuguyn00.common.GameEvent;
 import xyuguyn00.tool.GameObserver;
 import xyuguyn00.tool.Observable;
 import xyuguyn00.model.TerrainData;
+import xyuguyn00.model.UnitDamageData;
 
 /**
  * Main engine and state manager for the game.
@@ -28,6 +29,7 @@ public class Game implements Observable {
     // Data-driven dependencies
     private final UnitFactory unitFactory;
     private final Map<String, TerrainData> terrainRules;
+    private final List<UnitDamageData> damageRules;
 
     // Maps the characters from the mapDefinition array to the names in terrain.tsv
     private static final Map<Character, String> TERRAIN_CHAR_MAP = Map.of(
@@ -40,12 +42,13 @@ public class Game implements Observable {
         'H', "Velitelství"
     );
 
-    public Game(String[] mapDefinition, UnitFactory unitFactory, Map<String, TerrainData> terrainRules) {
+    public Game(String[] mapDefinition, UnitFactory unitFactory, Map<String, TerrainData> terrainRules, List<UnitDamageData> damageRules) {
         this.mapDefinition = mapDefinition;
         this.width = mapDefinition[0].replace(" ", "").length();
         this.height = mapDefinition.length;
         this.unitFactory = unitFactory;
         this.terrainRules = terrainRules;
+        this.damageRules = damageRules;
     }
 
     public Unit createUnit(String type, String player, int x, int y) {
@@ -97,6 +100,36 @@ public class Game implements Observable {
             return true;
         }
         return false;
+    }
+
+    // --- Combat Logic ---
+    
+    public boolean attack(Position attackerPos, Position defenderPos) {
+        Unit attacker = units.get(attackerPos);
+        Unit defender = units.get(defenderPos);
+
+        // Validate attack: units must exist, and attacker cannot be exhausted
+        if (attacker == null || defender == null || attacker.hasMoved()) return false;
+
+        // Lookup base damage in the matrix
+        int damage = 0;
+        for (UnitDamageData rule : damageRules) {
+            if (rule.attacker().equals(attacker.getType()) && rule.defender().equals(defender.getType())) {
+                damage = rule.damage();
+                break;
+            }
+        }
+
+        defender.takeDamage(damage);
+        attacker.setMoved(true); // Attacking exhausts the unit for the turn
+
+        // Handle death
+        if (defender.isDead()) {
+            units.remove(defenderPos);
+        }
+
+        notifyObservers();
+        return true;
     }
 
     private char getTerrainAt(int row, int col) {
