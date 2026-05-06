@@ -2,7 +2,7 @@
   "width": 5,
   "height": 5,
   "layout": [
-    "P P F M W",
+    "P P F M H",
     "P C P F P",
     "P P T P P",
     "M F P C W",
@@ -12,7 +12,8 @@
     { "x": 1, "y": 1, "type": "Město", "owner": "Neutral" },
     { "x": 3, "y": 3, "type": "Město", "owner": "Neutral" },
     { "x": 2, "y": 2, "type": "Továrna", "owner": "Neutral" },
-    { "x": 4, "y": 0, "type": "Velitelství", "owner": "Player 1" }
+    { "x": 4, "y": 0, "type": "Velitelství", "owner": "Player 1" },
+    { "x": 0, "y": 4, "type": "Velitelství", "owner": "Player 2" } 
   ],
   "units": [
     { "x": 0, "y": 0, "type": "Tank", "owner": "Player 1" },

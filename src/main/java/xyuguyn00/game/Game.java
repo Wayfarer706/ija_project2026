@@ -22,6 +22,7 @@ public class Game implements Observable {
     private final String[] mapDefinition;
     private final Map<Position, Unit> units = new HashMap<>();
     private final Map<Position, Building> buildings = new HashMap<>();
+    private final Map<String, Integer> playerFunds = new HashMap<>(Map.of("Player 1", 0, "Player 2", 0));
     private final List<GameObserver> observers = new ArrayList<>();
     private final int width;
     private final int height;
@@ -273,16 +274,59 @@ public class Game implements Observable {
         return currentPlayer;
     }
 
+    public int getPlayerFunds(String player) {
+        return playerFunds.getOrDefault(player, 0);
+    }
+
     public void endTurn() {
         // Toggle the active player
         currentPlayer = currentPlayer.equals("Player 1") ? "Player 2" : "Player 1";
         
-        // Loop through every unit on the board and reset their action state
+        // Reset unit movement for everyone
         for (Unit unit : units.values()) {
             unit.setMoved(false);
         }
+
+        processIncomeAndRepair(currentPlayer);
         
-        notifyObservers(); // Tell the UI that the turn has changed
+        notifyObservers(); 
+    }
+
+    public void processIncomeAndRepair(String player) {
+        int currentFunds = playerFunds.getOrDefault(player, 0);
+
+        // Calculate Income (1000 per owned building)
+        for (Building b : buildings.values()) {
+            if (b.getOwner().equals(player)) {
+                currentFunds += 1000;
+            }
+        }
+
+        // Process Repairs (Units on friendly buildings)
+        for (Building b : buildings.values()) {
+            if (b.getOwner().equals(player)) {
+                Unit u = units.get(b.getPosition());
+                
+                // If a friendly unit is here and damaged
+                if (u != null && u.getPlayer().equals(player) && u.getHp() < 100) {
+                    int missingHp = 100 - u.getHp();
+                    int hpToHeal = Math.min(20, missingHp); // Max 20 HP per turn
+                    
+                    // 10% of base cost per 10 HP -> 1% of base cost per 1 HP
+                    int costPerHp = u.getBaseCost() / 100;
+                    int repairCost = hpToHeal * costPerHp;
+
+                    // If a player doesn't have money unit won't be repaired
+                    if (currentFunds >= repairCost) {
+                        currentFunds -= repairCost;
+                        u.heal(hpToHeal);
+                    }
+                }
+            }
+        }
+
+        // Save the updated treasury back to the engine
+        playerFunds.put(player, currentFunds);
     }
 
     public void addBuilding(Building building) {
