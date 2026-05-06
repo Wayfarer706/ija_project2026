@@ -180,4 +180,24 @@ public class GameFactoryValidationTest {
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("does not match the 'width' parameter"));
     }
+
+    @Test
+    public void testInvalidBuildingTypeThrowsException() {
+        GameMapData data = createTestMap(
+            List.of(new GameMapData.BuildingInitData(1, 1, "Tank", "Player 1")), // ILLEGAL: Tank is not a building
+            List.of()
+        );
+        Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
+        assertTrue(exception.getMessage().contains("Invalid building type"));
+    }
+
+    @Test
+    public void testInvalidUnitTypeThrowsException() {
+        GameMapData data = createTestMap(
+            List.of(),
+            List.of(new GameMapData.UnitInitData(1, 1, "Město", "Player 1")) // ILLEGAL: Město is not a unit
+        );
+        Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
+        assertTrue(exception.getMessage().contains("Invalid unit type"));
+    }
 }
