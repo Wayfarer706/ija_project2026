@@ -14,6 +14,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import xyuguyn00.common.GameEvent;
 import xyuguyn00.common.Position;
+import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
 import xyuguyn00.tool.GameObserver;
@@ -194,6 +195,19 @@ public class GameView extends GridPane implements GameObserver {
                     bg.setStroke(Color.BLACK); 
                     bg.setStrokeWidth(0.5);
                     tile.getChildren().add(bg);
+                
+                    Building building = game.getBuildingAt(pos);
+                    if (building != null) {
+                        Rectangle bldgOverlay = new Rectangle(tileSize - 12, tileSize - 12);
+                        bldgOverlay.setFill(Color.TRANSPARENT);
+                        bldgOverlay.setStrokeWidth(4);
+                        
+                        if (building.getOwner().equals("Player 1")) bldgOverlay.setStroke(Color.DARKBLUE);
+                        else if (building.getOwner().equals("Player 2")) bldgOverlay.setStroke(Color.DARKRED);
+                        else bldgOverlay.setStroke(Color.WHITE); // Neutral
+                        
+                        tile.getChildren().add(bldgOverlay);
+                    }
 
                     // 2. Highlights
                     if (isTargeting && validTargets.contains(pos)) {

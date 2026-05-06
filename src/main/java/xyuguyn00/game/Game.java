@@ -21,6 +21,7 @@ import xyuguyn00.model.UnitDamageData;
 public class Game implements Observable {
     private final String[] mapDefinition;
     private final Map<Position, Unit> units = new HashMap<>();
+    private final Map<Position, Building> buildings = new HashMap<>();
     private final List<GameObserver> observers = new ArrayList<>();
     private final int width;
     private final int height;
@@ -282,5 +283,13 @@ public class Game implements Observable {
         }
         
         notifyObservers(); // Tell the UI that the turn has changed
+    }
+
+    public void addBuilding(Building building) {
+        buildings.put(building.getPosition(), building);
+    }
+
+    public Building getBuildingAt(Position pos) {
+        return buildings.get(pos);
     }
 }

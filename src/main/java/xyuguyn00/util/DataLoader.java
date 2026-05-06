@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 
 public class DataLoader {
 
@@ -95,5 +97,13 @@ public class DataLoader {
             damageRules.add(new UnitDamageData(attacker, defender, damage));
         }
         return damageRules;
+    }
+
+    /**
+     * Parses the game_stats.json file into our GameMapData record using Jackson.
+     */
+    public static GameMapData loadGameStats(String filePath) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(new File(filePath), GameMapData.class);
     }
 }
