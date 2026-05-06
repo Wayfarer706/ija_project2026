@@ -99,7 +99,7 @@ public class GameView extends GridPane implements GameObserver {
         validTargets.clear();
         Unit attacker = game.getUnitAt(selectedPosition);
         
-        // Spec Rule: Artillery cannot move and attack in the same turn.
+        // Artillery cannot move and attack in the same turn.
         boolean canAttack = true;
         if (attacker.getType().equals("Dělostřelectvo") && !selectedPosition.equals(previewPosition)) {
             canAttack = false; 
@@ -126,7 +126,7 @@ public class GameView extends GridPane implements GameObserver {
         }
 
         // --- DYNAMIC MENU OPTIONS ---
-        
+
         if (!validTargets.isEmpty()) {
             MenuItem attackItem = new MenuItem("Attack");
             attackItem.setOnAction(e -> {
@@ -136,6 +136,23 @@ public class GameView extends GridPane implements GameObserver {
                 render();
             });
             activeMenu.getItems().add(attackItem);
+        }
+
+        Building targetBuilding = game.getBuildingAt(previewPosition);
+        if (targetBuilding != null && attacker.getType().equals("Pěchota") && !targetBuilding.getOwner().equals(attacker.getPlayer())) {
+            MenuItem captureItem = new MenuItem("Zabrat (" + targetBuilding.getCapturePoints() + " CP)");
+            captureItem.setOnAction(e -> {
+                Position moveFrom = selectedPosition;
+                Position moveTo = previewPosition;
+
+                if (activeMenu != null) activeMenu.setOnHidden(null);
+                activeMenu.hide();
+                
+                game.moveUnit(moveFrom, moveTo);
+                game.captureBuilding(moveTo);
+                clearSelection();
+            });
+            activeMenu.getItems().add(captureItem);
         }
 
         MenuItem waitItem = new MenuItem("Wait");
@@ -189,7 +206,7 @@ public class GameView extends GridPane implements GameObserver {
                     StackPane tile = new StackPane();
                     tile.setOnMouseClicked(event -> handleTileClick(pos, event));
 
-                    // 1. Background
+                    // Background
                     Rectangle bg = new Rectangle(tileSize, tileSize);
                     bg.setFill(getTerrainColor(terrainChar));
                     bg.setStroke(Color.BLACK); 
@@ -209,7 +226,7 @@ public class GameView extends GridPane implements GameObserver {
                         tile.getChildren().add(bldgOverlay);
                     }
 
-                    // 2. Highlights
+                    // Highlights
                     if (isTargeting && validTargets.contains(pos)) {
                         // Draw red targeting crosshair overlay
                         Rectangle crosshair = new Rectangle(tileSize, tileSize);
@@ -229,7 +246,7 @@ public class GameView extends GridPane implements GameObserver {
                         tile.getChildren().add(pathTarget);
                     }
 
-                    // 3. Unit Rendering (with preview logic)
+                    // Unit Rendering (with preview logic)
                     Unit unit = game.getUnitAt(pos);
                     if (previewPosition != null) {
                         if (pos.equals(previewPosition)) {
@@ -256,6 +273,15 @@ public class GameView extends GridPane implements GameObserver {
                         if (unit.getHp() > 50) hpLabel.setFill(Color.LIGHTGREEN);
                         else if (unit.getHp() > 20) hpLabel.setFill(Color.YELLOW);
                         else hpLabel.setFill(Color.RED);
+
+                        Building b = game.getBuildingAt(pos);
+                        if (b != null && b.getCapturePoints() < 20) {
+                            Text cpLabel = new Text("CP: " + b.getCapturePoints());
+                            cpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 11));
+                            cpLabel.setFill(Color.CYAN);
+                            cpLabel.setTranslateY(-22); // Place it above the unit icon
+                            tile.getChildren().add(cpLabel);
+                        }
 
                         if (unit.hasMoved()) {
                             token.setOpacity(0.4); 

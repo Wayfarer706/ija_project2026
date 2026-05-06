@@ -92,6 +92,13 @@ public class Game implements Observable {
         Unit unit = units.get(from);
         if (unit == null || unit.hasMoved()) return false;
 
+        if (!from.equals(to)) {
+            Building startingTileBuilding = buildings.get(from);
+            if (startingTileBuilding != null) {
+                startingTileBuilding.resetCapturePoints();
+            }
+        }
+
         List<Position> reachablePositions = getReachableTiles(from);
         if (reachablePositions.contains(to)) {
             units.remove(from);
@@ -101,6 +108,7 @@ public class Game implements Observable {
             notifyObservers();
             return true;
         }
+        
         return false;
     }
 
@@ -176,6 +184,37 @@ public class Game implements Observable {
         defender.takeDamage(finalDamage);
     }
 
+    // --- Capture Mechanics ---
+    public boolean captureBuilding(Position targetPos) {
+        Unit unit = units.get(targetPos);
+        Building building = buildings.get(targetPos);
+
+        // Validation: Must have a unit, a building, unit must be Infantry, and building must be enemy/neutral
+        if (unit == null || building == null) return false;
+        if (!unit.getType().equals("Pěchota")) return false;
+        if (building.getOwner().equals(unit.getPlayer())) return false;
+
+        // Math: 10% of current HP rounded down
+        int captureDamage = (int) Math.floor(unit.getHp() * 0.1);
+        building.reduceCapturePoints(captureDamage);
+
+        // Check if capture is complete
+        if (building.getCapturePoints() <= 0) {
+            building.setOwner(unit.getPlayer());
+            building.resetCapturePoints(); // Reset to 20 for future
+            
+            // Check Win Condition
+            if (building.getType().equals("Velitelství")) {
+                System.out.println(unit.getPlayer() + " WINS THE GAME!");
+            }
+        }
+
+        unit.setMoved(true); // Commits the turn
+        notifyObservers();
+        return true;
+    }
+
+    // -- Pathfinding algorithm for Unit movement --
     private char getTerrainAt(int row, int col) {
         if (row >= 0 && row < height && col >= 0 && col < width) {
             return mapDefinition[row].replace(" ", "").charAt(col);
