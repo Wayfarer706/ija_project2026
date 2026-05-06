@@ -1,34 +1,127 @@
 package xyuguyn00.game;
 
+import xyuguyn00.common.Position;
+import xyuguyn00.model.GameMapData;
 import xyuguyn00.model.TerrainData;
+import xyuguyn00.model.UnitDamageData;
 import xyuguyn00.model.UnitData;
 import xyuguyn00.util.DataLoader;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-/**
- * Orchestrates the initialization of the game engine.
- * Responsible for loading external TSV rules and injecting them into the Game instance.
- */
 public class GameFactory {
 
-    /**
-     * Bootstraps the game by loading data files and wiring dependencies.
-     * @param mapDefinition The string array representing the grid layout.
-     * @param terrainFilePath Path to terrain.tsv
-     * @param unitsFilePath Path to units.tsv
-     * @return A fully initialized Game engine ready for use.
-     * @throws Exception if data files cannot be found or parsed.
-     */
-    public static Game createGame(String[] mapDefinition, String terrainFilePath, String unitsFilePath) throws Exception {
-        // Load the dynamic rules from the data directory
+    public static Game createGame(String mapFilePath, String terrainFilePath, String unitsFilePath, String damagePath) throws Exception {
+        // Load rules
         Map<String, TerrainData> terrainRules = DataLoader.loadTerrain(terrainFilePath);
         Map<String, UnitData> unitRules = DataLoader.loadUnits(unitsFilePath);
+        List<UnitDamageData> damageRules = DataLoader.loadDamage(damagePath);
+        
+        // Load JSON Map Data
+        GameMapData mapData = DataLoader.loadGameStats(mapFilePath);
 
-        // Initialize the internal factories
+        // Validate the loaded data
+        validateMapData(mapData);
+
+        // Initialize Engine
         UnitFactory unitFactory = new UnitFactory(unitRules);
+        String[] mapLayout = mapData.layout().toArray(new String[0]);
+        Game game = new Game(mapLayout, unitFactory, terrainRules, damageRules);
 
-        // Construct and return the core engine
-        return new Game(mapDefinition, unitFactory, terrainRules);
+        // Spawn Buildings from JSON
+        for (GameMapData.BuildingInitData bData : mapData.buildings()) {
+            Building b = new Building(new Position(bData.y(), bData.x()), bData.type(), bData.owner());
+            game.addBuilding(b);
+        }
+
+        // Spawn Units from JSON
+        for (GameMapData.UnitInitData uData : mapData.units()) {
+            game.createUnit(uData.type(), uData.owner(), uData.y(), uData.x());
+        }
+
+        game.processIncomeAndRepair(game.getCurrentPlayer());
+
+        return game;
     }
-}
+
+    /**
+     * Performs a sanity check on the JSON data to prevent loading a broken game state.
+     */
+    public static void validateMapData(GameMapData mapData) throws Exception {
+        int width = mapData.width();
+        int height = mapData.height();
+
+        // Allowed Types
+        Set<String> validBuildings = Set.of("Město", "Továrna", "Velitelství");
+        Set<String> validUnits = Set.of("Pěchota", "Tank", "Dělostřelectvo");
+
+        // Layout matches dimensions
+        if (mapData.layout().size() != height) {
+            throw new Exception("JSON Layout row count does not match the 'height' parameter.");
+        }
+        for (String row : mapData.layout()) {
+            // Remove spaces before checking length to match how the engine parses it
+            if (row.replace(" ", "").length() != width) {
+                throw new Exception("JSON Layout row length does not match the 'width' parameter.");
+            }
+        }
+
+        // Buildings are within bounds, logical, and do not stack
+        Set<String> occupiedBuildingTiles = new HashSet<>();
+        for (GameMapData.BuildingInitData b : mapData.buildings()) {
+            if (!validBuildings.contains(b.type())) {
+                throw new Exception("CRITICAL DATA ERROR: Invalid building type '" + b.type() + "'. Expected one of: " + validBuildings);
+            }
+
+            // Bound check
+            if (b.x() < 0 || b.x() >= width || b.y() < 0 || b.y() >= height) {
+                throw new Exception("Building '" + b.type() + "' is placed completely off the map at coordinates (" + b.x() + ", " + b.y() + ").");
+            }
+            
+            // NEW: Building Stacking Check
+            String coordKey = b.x() + "," + b.y();
+            if (occupiedBuildingTiles.contains(coordKey)) {
+                throw new Exception("CRITICAL DATA ERROR: Multiple buildings placed on the same tile at coordinates (" + b.x() + ", " + b.y() + ")!");
+            }
+            occupiedBuildingTiles.add(coordKey);
+
+            char terrainChar = mapData.layout().get(b.y()).replace(" ", "").charAt(b.x());
+            if (terrainChar == 'W' || terrainChar == 'M') {
+                throw new Exception("CRITICAL DATA ERROR: Building '" + b.type() + "' at (" + b.x() + ", " + b.y() + ") is placed on impassable terrain (Water/Mountain)!");
+            }
+        }
+
+        // Units are within bounds, do not stack, and follow terrain rules
+        Set<String> occupiedUnitTiles = new HashSet<>();
+        for (GameMapData.UnitInitData u : mapData.units()) {
+            if (!validUnits.contains(u.type())) {
+                throw new Exception("CRITICAL DATA ERROR: Invalid unit type '" + u.type() + "'. Expected one of: " + validUnits);
+            }
+            // Bounds Check
+            if (u.x() < 0 || u.x() >= width || u.y() < 0 || u.y() >= height) {
+                throw new Exception("Unit '" + u.type() + "' is placed completely off the map at coordinates (" + u.x() + ", " + u.y() + ").");
+            }
+            
+            // Stacking Check
+            String coordKey = u.x() + "," + u.y();
+            if (occupiedUnitTiles.contains(coordKey)) {
+                throw new Exception("CRITICAL DATA ERROR: Multiple units placed on the same tile at coordinates (" + u.x() + ", " + u.y() + ")!");
+            }
+            occupiedUnitTiles.add(coordKey);
+
+            // Terrain Passability Check
+            char terrainChar = mapData.layout().get(u.y()).replace(" ", "").charAt(u.x());
+            
+            if (terrainChar == 'W') {
+                throw new Exception("CRITICAL DATA ERROR: Unit placed on impassable terrain (Water) at (" + u.x() + ", " + u.y() + ")!");
+            }
+            
+            if (terrainChar == 'M' && (u.type().equals("Tank") || u.type().equals("Dělostřelectvo"))) {
+                throw new Exception("CRITICAL DATA ERROR: Vehicle placed on impassable Mountain at (" + u.x() + ", " + u.y() + ")!");
+            }
+        }
+    }
+}   

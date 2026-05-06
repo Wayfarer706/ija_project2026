@@ -12,7 +12,8 @@ public class Unit {
     private Position position;
     private final UnitData data;
     private final String player;
-    private int hp;
+    private int hp = 100;            
+    private boolean hasMoved = false; // Track if the unit has already moved this turn
 
     public Unit(UnitData data, String player, Position position) {
         this.data = data;
@@ -28,6 +29,22 @@ public class Unit {
     public int getHp() { return hp; }
     public int getMaxMove() { return data.movementRange(); }
     public String getMovementType() { return data.movementType(); }
+    public int getMinAttackRange() { return data.minAttackRange(); }
+    public int getMaxAttackRange() { return data.maxAttackRange(); }
+    public int getBaseCost() { return data.cost(); }
+    public boolean hasMoved() { return hasMoved; }
+    public void setMoved(boolean moved) { this.hasMoved = moved; }
+    public boolean isDead() { return hp <= 0; }
+
+    public void takeDamage(int points) {
+        this.hp -= points;
+        if (this.hp < 0) this.hp = 0;
+    }
+
+    public void heal(int points) {
+        this.hp += points;
+        if (this.hp > 100) this.hp = 100;
+    }
 
     /**
      * Calculates the cost to enter a tile dynamically based on the unit's movement type

@@ -1,6 +1,6 @@
 # AI Audit Log - Team xyuguyn00 
 
-**Last Updated:** April 10, 2026
+**Last Updated:** April 15, 2026
 
 ---
 
@@ -54,3 +54,48 @@
 * **Prompt:** > "Generate a pom.xml file to support maven and JUnit 5."
 * **Student Modification:** The AI generated the complete Maven configuration file, including the `maven-compiler-plugin`, JavaFX dependencies, and JUnit 5 test scope. I copy-pasted the file directly into the project root and executed `mvn clean compile` to synchronize the workspace.
 * **Generation Ratio:** 100 % AI.
+
+---
+
+## 6. Turn Management & Sidebar UI
+* **Tool:** Gemini
+* **Date:** April 15, 2026
+* **Prompt:** > "I think the game will look like this. At the right we have main board and on the left we have two cards representing a Player 1 and Player 2. We will indicate the player's turn by highlighting the borders of player's cards. Initially it will only have Player 1 and Player 2 text, but in the future we will include info about the gold amount etc."
+* **Student Modification:** The AI provided the initial JavaFX layout template for the `PlayerSidebar` component.
+* **Generation Ratio:** 100 % AI.
+
+---
+
+## 7. Combat System & Interaction UI Overhaul
+* **Tool:** Gemini
+* **Date:** May 6, 2026
+* **Prompt:** > "The unit type determines the distance that a particular unit can move per turn. We don't determine the distance that the particular unit can attack an enemy? I need to implement the combat rules and UI interactions based on the strict specs provided."
+* **Student Modification:** I implemented the core logic for the combat system and the data parsing for the new properties (min/max attack ranges, terrain defense bonuses, counter-attacks, and strict Manhattan distance validations). The AI helped me with the overall architectural concept (decoupling the visual move preview from the engine state) and assisted with the JavaFX UI implementation for the combat system, including the targeting mode crosshairs and thread safety.
+* **Generation Ratio:** 40% (AI architectural concepts and UI state-machine boilerplate), 60% (student implementation of deterministic combat math, parsing logic, and engine integration).
+
+---
+
+## 8.JSON Map Parsing & Dynamic Initialization
+* **Tool:** Gemini
+* **Date:** May 6, 2026
+* **Prompt:** > "Let's use Jackson for JSON parsing. The professor didn't provide the game_stats.json file, so I need to design one. How should we structure the parsing and the dynamic initialization for buildings and ownership?"
+* **Student Modification:** I designed the Java data models (Building.java to track dynamic state like ownership and capture points, and GameMapData.java records). I implemented the Jackson parsing logic within DataLoader, and completely refactored GameFactory and App.java to spawn the grid, buildings, and units from the JSON data. I also updated the GameView rendering loop to visually represent building ownership. The AI assisted by suggesting a clean JSON schema structure and providing the initial Maven dependency configuration for Jackson.
+* **Generation Ratio:** 20% (AI JSON schema design and Jackson setup), 80% (student implementation of parsing logic, data models, engine integration, and UI rendering).
+
+---
+
+## 9. Economics, Turn Lifecycle Refactoring & Validation Layer
+* **Tool: Gemini**
+* **Date:** May 6, 2026
+* **Prompt:** > "I found a bug where gold is not added correctly on turn 1... Also, tanks can't enter the HQ because it was placed in water. Should I add logic to validate the game_stats.json to prevent invalid placements?"
+* **Student Modification:** I implemented the core economic engine, dynamically tracking player funds and connecting them to the JavaFX PlayerSidebar. I refactored the turn management lifecycle in Game.java to strictly enforce the "Income and Repair" at the start of every turn. During testing, I discovered critical pathfinding blocks caused by invalid data configurations. I integrated a validation layer (validateMapData) within the Factory to check JSON inputs, ensuring buildings and units are placed on valid, passable terrain before the engine initializes. The AI assisted by providing the UI data-binding templates.
+* **Generation Ratio:** 15% (UI data-binding templates), 85% (student implementation, rigorous engine testing, bug discovery, and data validation engineering).
+
+---
+
+## 10. GameFactory Validation Test Suite
+* **Tool:** Gemini
+* **Date:** May 6, 2026
+* **Prompt:** > "I found out that if we parse the json with more than one unit on the same tile it accepts it and only one utnit is rendered on that tile. I think we need to refactor the validation or better let's implement tests for the validation logic to be 100% sure in it's logic and never return to that"
+* **Student Modification:** I found a bug where units overwrite each other if placed on the exact same tile in the JSON. I told the AI to update the validation rules and write a JUnit 5 test suite (GameFactoryValidationTest.java) to check for map borders, impassable terrain, and stacked units. I added this code to the project.
+* **Generation Ratio:** 100% AI.

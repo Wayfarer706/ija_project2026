@@ -7,7 +7,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.GameFactory;
-import xyuguyn00.view.GameView;
+import xyuguyn00.view.*;
 
 /**
  * The main entry point for the JavaFX GUI application.
@@ -18,34 +18,22 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            String[] mapDefinition = {
-                "P P F M W",
-                "P C P F P",
-                "P P T P P",
-                "M F P C W",
-                "H P P P P"
-            };
-
             Game game = GameFactory.createGame(
-                mapDefinition, 
+                "data/game_stats.json", 
                 "data/terrain.tsv", 
-                "data/units.tsv"
+                "data/units.tsv",
+                "data/units-damage.tsv"
             );
 
-            // --- Spawn some test units ---
-            // Creating a Tank for Player 1 at [0, 0]
-            game.createUnit("Tank", "Player 1", 0, 0); 
-            // Creating Infantry for Player 2 at [4, 4]
-            game.createUnit("Pěchota", "Player 2", 4, 4);
-
-            // Initialize the root layout and attach our custom View
             BorderPane root = new BorderPane();
-            
-            GameView view = new GameView(game); 
-            root.setCenter(view);
+            GameView boardView = new GameView(game); 
+            PlayerSidebar sidebar = new PlayerSidebar(game);
 
-            Scene scene = new Scene(root, 800, 600);
-            primaryStage.setTitle("Strategy Game - xyuguyn00");
+            root.setLeft(sidebar);
+            root.setCenter(boardView);
+
+            Scene scene = new Scene(root, 1000, 600); 
+            primaryStage.setTitle("Strategy Game");
             primaryStage.setScene(scene);
             primaryStage.show();
 

@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 
 public class DataLoader {
 
@@ -15,45 +17,62 @@ public class DataLoader {
      * Parses the terrain.tsv file into a Map keyed by the terrain name.
      */
     public static Map<String, TerrainData> loadTerrain(String filePath) throws Exception {
-        Map<String, TerrainData> terrainMap = new HashMap<>();
+        Map<String, TerrainData> terrain = new HashMap<>();
         List<String> lines = Files.readAllLines(Path.of(filePath));
 
-        // Start at i=1 to skip the header row
         for (int i = 1; i < lines.size(); i++) {
             String[] parts = lines.get(i).split("\t");
-            if (parts.length < 4) continue;
+            if (parts.length >= 4) {
+                // Strip the English translation from the name e.g., "Pláň (Plain)" -> "Pláň"
+                String name = parts[0].trim().split(" ")[0]; 
+                
+                // Parse defense bonus (treating "-" as 0)
+                int defenseBonus = parts[1].trim().equals("-") ? 0 : Integer.parseInt(parts[1].trim());
+                
+                // Parse movement costs (treating impassable strings as -1)
+                int infCost = parts[2].trim().equals("-") ? -1 : Integer.parseInt(parts[2].trim());
+                
+                String vehRaw = parts[3].trim().toLowerCase();
+                int vehCost = (vehRaw.equals("-") || vehRaw.startsWith("nepr")) ? -1 : Integer.parseInt(parts[3].trim());
 
-            String name = extractBaseName(parts[0]); 
-            int defense = parseStat(parts[1]);
-            int infCost = parseStat(parts[2]);
-            int vehCost = parseStat(parts[3]);
-
-            terrainMap.put(name, new TerrainData(name, defense, infCost, vehCost));
+                terrain.put(name, new TerrainData(name, defenseBonus, infCost, vehCost));
+            }
         }
-        return terrainMap;
+        return terrain;
     }
 
     /**
      * Parses the units.tsv file into a Map keyed by the unit name.
      */
-    public static Map<String, UnitData> loadUnits(String filePath) throws Exception {
-        Map<String, UnitData> unitMap = new HashMap<>();
+    public static Map<String, UnitData> loadUnits(String filePath) throws Exception {   
+        Map<String, UnitData> units = new HashMap<>();
         List<String> lines = Files.readAllLines(Path.of(filePath));
 
         for (int i = 1; i < lines.size(); i++) {
             String[] parts = lines.get(i).split("\t");
-            if (parts.length < 5) continue;
+            if (parts.length >= 5) {
+                String name = parts[0].trim();
+                int cost = Integer.parseInt(parts[1].replaceAll("\\s+", "")); 
+                String movementType = parts[2].trim();
+                int movementRange = Integer.parseInt(parts[3].trim());
+                
+                String rawAttackRange = parts[4].trim().split(" ")[0];
+                int minRange;
+                int maxRange;
 
-            String name = parts[0].trim();
-            // Remove spaces from numbers (e.g., "1 000" -> 1000)
-            int cost = Integer.parseInt(parts[1].replace(" ", "").trim()); 
-            String moveType = parts[2].trim();
-            int moveRange = Integer.parseInt(parts[3].trim());
-            String attackRange = parts[4].trim();
+                if (rawAttackRange.contains("-")) {
+                    String[] bounds = rawAttackRange.split("-");
+                    minRange = Integer.parseInt(bounds[0]);
+                    maxRange = Integer.parseInt(bounds[1]);
+                } else {
+                    minRange = Integer.parseInt(rawAttackRange);
+                    maxRange = minRange;
+                }
 
-            unitMap.put(name, new UnitData(name, cost, moveType, moveRange, attackRange));
+                units.put(name, new UnitData(name, cost, movementType, movementRange, minRange, maxRange));
+            }
         }
-        return unitMap;
+        return units;
     }
 
     /**
@@ -81,28 +100,10 @@ public class DataLoader {
     }
 
     /**
-     * Helper to handle text like "Neprůjezdné", "Neprůchozí", or "-" by converting to -1.
+     * Parses the game_stats.json file into our GameMapData record using Jackson.
      */
-    private static int parseStat(String value) {
-        String cleanValue = value.trim();
-        if (cleanValue.equals("-") || cleanValue.toLowerCase().contains("neprů")) {
-            return -1; // -1 indicates impassable in our Dijkstra algorithm
-        }
-        try {
-            return Integer.parseInt(cleanValue);
-        } catch (NumberFormatException e) {
-            return 0; 
-        }
-    }
-
-    /**
-     * Helper to clean up names like "Pláň (Plain)" to just "Pláň" if needed, 
-     * or you can adjust this to keep the English keys.
-     */
-    private static String extractBaseName(String fullName) {
-        if (fullName.contains("(")) {
-            return fullName.substring(0, fullName.indexOf("(")).trim();
-        }
-        return fullName.trim();
+    public static GameMapData loadGameStats(String filePath) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(new File(filePath), GameMapData.class);
     }
 }
