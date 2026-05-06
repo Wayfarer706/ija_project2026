@@ -29,6 +29,8 @@ public class Unit {
     public int getHp() { return hp; }
     public int getMaxMove() { return data.movementRange(); }
     public String getMovementType() { return data.movementType(); }
+    public int getMinAttackRange() { return data.minAttackRange(); }
+    public int getMaxAttackRange() { return data.maxAttackRange(); }
     public boolean hasMoved() { return hasMoved; }
     public void setMoved(boolean moved) { this.hasMoved = moved; }
     public boolean isDead() { return hp <= 0; }

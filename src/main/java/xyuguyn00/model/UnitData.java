@@ -8,5 +8,6 @@ public record UnitData(
     int cost,
     String movementType,
     int movementRange,
-    String attackRange
+    int minAttackRange,
+    int maxAttackRange
 ) {}
