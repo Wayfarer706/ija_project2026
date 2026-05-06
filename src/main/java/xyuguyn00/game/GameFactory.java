@@ -7,8 +7,10 @@ import xyuguyn00.model.UnitDamageData;
 import xyuguyn00.model.UnitData;
 import xyuguyn00.util.DataLoader;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class GameFactory {
 
@@ -48,33 +50,41 @@ public class GameFactory {
     /**
      * Performs a sanity check on the JSON data to prevent loading a broken game state.
      */
-    private static void validateMapData(GameMapData mapData) throws Exception {
+    public static void validateMapData(GameMapData mapData) throws Exception {
         int width = mapData.width();
         int height = mapData.height();
 
-        // Check layout matches dimensions
+        // Layout matches dimensions
         if (mapData.layout().size() != height) {
             throw new Exception("JSON Layout row count does not match the 'height' parameter.");
         }
 
-        // Check buildings are within bounds and logical
+        // Buildings are within bounds and logical
         for (GameMapData.BuildingInitData b : mapData.buildings()) {
             if (b.x() < 0 || b.x() >= width || b.y() < 0 || b.y() >= height) {
                 throw new Exception("Building '" + b.type() + "' is placed completely off the map at coordinates (" + b.x() + ", " + b.y() + ").");
             }
             
-            // Validate that the layout actually has a building tile at this coordinate
             char terrainChar = mapData.layout().get(b.y()).replace(" ", "").charAt(b.x());
             if (terrainChar == 'W' || terrainChar == 'M') {
                 throw new Exception("CRITICAL DATA ERROR: Building '" + b.type() + "' at (" + b.x() + ", " + b.y() + ") is placed on impassable terrain (Water/Mountain)!");
             }
         }
 
-        // Check units are within bounds
+        // Units are within bounds AND do not overlap (Stacking Rule)
+        Set<String> occupiedTiles = new HashSet<>();
         for (GameMapData.UnitInitData u : mapData.units()) {
+            // Bounds Check
             if (u.x() < 0 || u.x() >= width || u.y() < 0 || u.y() >= height) {
                 throw new Exception("Unit '" + u.type() + "' is placed completely off the map at coordinates (" + u.x() + ", " + u.y() + ").");
             }
+            
+            // Collision / Stacking Check
+            String coordKey = u.x() + "," + u.y();
+            if (occupiedTiles.contains(coordKey)) {
+                throw new Exception("CRITICAL DATA ERROR: Multiple units placed on the same tile at coordinates (" + u.x() + ", " + u.y() + ")!");
+            }
+            occupiedTiles.add(coordKey);
         }
     }
-}
+}   
