@@ -72,3 +72,12 @@
 * **Prompt:** > "The unit type determines the distance that a particular unit can move per turn. We don't determine the distance that the particular unit can attack an enemy? I need to implement the combat rules and UI interactions based on the strict specs provided."
 * **Student Modification:** I implemented the core logic for the combat system and the data parsing for the new properties (min/max attack ranges, terrain defense bonuses, counter-attacks, and strict Manhattan distance validations). The AI helped me with the overall architectural concept (decoupling the visual move preview from the engine state) and assisted with the JavaFX UI implementation for the combat system, including the targeting mode crosshairs and thread safety.
 * **Generation Ratio:** 40% (AI architectural concepts and UI state-machine boilerplate), 60% (student implementation of deterministic combat math, parsing logic, and engine integration).
+
+---
+
+## 8. Phase 3: JSON Map Parsing & Dynamic Initialization
+* **Tool:** Gemini
+* **Date:** May 6, 2026
+* **Prompt:** > "Let's use Jackson for JSON parsing. The professor didn't provide the game_stats.json file, so I need to design one. How should we structure the parsing and the dynamic initialization for buildings and ownership?"
+* **Student Modification:** I designed the Java data models (Building.java to track dynamic state like ownership and capture points, and GameMapData.java records). I implemented the Jackson parsing logic within DataLoader, and completely refactored GameFactory and App.java to spawn the grid, buildings, and units from the JSON data. I also updated the GameView rendering loop to visually represent building ownership. The AI assisted by suggesting a clean JSON schema structure and providing the initial Maven dependency configuration for Jackson.
+* **Generation Ratio:** 20% (AI JSON schema design and Jackson setup), 80% (student implementation of parsing logic, data models, engine integration, and UI rendering).
