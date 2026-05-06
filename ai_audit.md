@@ -63,3 +63,12 @@
 * **Prompt:** > "I think the game will look like this. At the right we have main board and on the left we have two cards representing a Player 1 and Player 2. We will indicate the player's turn by highlighting the borders of player's cards. Initially it will only have Player 1 and Player 2 text, but in the future we will include info about the gold amount etc."
 * **Student Modification:** The AI provided the initial JavaFX layout template for the `PlayerSidebar` component.
 * **Generation Ratio:** 100 % AI.
+
+---
+
+## 7. Combat System & Interaction UI Overhaul
+* **Tool:** Gemini
+* **Date:** May 6, 2026
+* **Prompt:** > "The unit type determines the distance that a particular unit can move per turn. We don't determine the distance that the particular unit can attack an enemy? I need to implement the combat rules and UI interactions based on the strict specs provided."
+* **Student Modification:** I implemented the core logic for the combat system and the data parsing for the new properties (min/max attack ranges, terrain defense bonuses, counter-attacks, and strict Manhattan distance validations). The AI helped me with the overall architectural concept (decoupling the visual move preview from the engine state) and assisted with the JavaFX UI implementation for the combat system, including the targeting mode crosshairs and thread safety.
+* **Generation Ratio:** 40% (AI architectural concepts and UI state-machine boilerplate), 60% (student implementation of deterministic combat math, parsing logic, and engine integration).
