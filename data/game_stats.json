@@ -1,12 +1,14 @@
 {
-  "width": 5,
-  "height": 5,
+  "width": 7,
+  "height": 7,
   "layout": [
-    "P P F M H",
-    "P C P F P",
-    "P P T P P",
-    "M F P C W",
-    "H P P P P"
+    "P P F M H P P",
+    "P C P F P P P",
+    "P P T P P P P",
+    "M F P C W P P",
+    "H P P P P P P",
+    "P P P P P P P",
+    "P P P P P P P"
   ],
   "buildings": [
     { "x": 1, "y": 1, "type": "Město", "owner": "Neutral" },
@@ -18,6 +20,7 @@
   "units": [
     { "x": 0, "y": 0, "type": "Tank", "owner": "Player 1" },
     { "x": 1, "y": 2, "type": "Tank", "owner": "Player 1" },
+    { "x": 1, "y": 0, "type": "Dělostřelectvo", "owner": "Player 1" },
     { "x": 1, "y": 3, "type": "Pěchota", "owner": "Player 1" },
     { "x": 4, "y": 4, "type": "Pěchota", "owner": "Player 2" },
     { "x": 3, "y": 3, "type": "Pěchota", "owner": "Player 2" }

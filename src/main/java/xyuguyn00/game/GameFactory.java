@@ -54,7 +54,11 @@ public class GameFactory {
         int width = mapData.width();
         int height = mapData.height();
 
-        // Check 1: Layout matches dimensions
+        // Allowed Types
+        Set<String> validBuildings = Set.of("Město", "Továrna", "Velitelství");
+        Set<String> validUnits = Set.of("Pěchota", "Tank", "Dělostřelectvo");
+
+        // Layout matches dimensions
         if (mapData.layout().size() != height) {
             throw new Exception("JSON Layout row count does not match the 'height' parameter.");
         }
@@ -68,6 +72,11 @@ public class GameFactory {
         // Buildings are within bounds, logical, and do not stack
         Set<String> occupiedBuildingTiles = new HashSet<>();
         for (GameMapData.BuildingInitData b : mapData.buildings()) {
+            if (!validBuildings.contains(b.type())) {
+                throw new Exception("CRITICAL DATA ERROR: Invalid building type '" + b.type() + "'. Expected one of: " + validBuildings);
+            }
+
+            // Bound check
             if (b.x() < 0 || b.x() >= width || b.y() < 0 || b.y() >= height) {
                 throw new Exception("Building '" + b.type() + "' is placed completely off the map at coordinates (" + b.x() + ", " + b.y() + ").");
             }
@@ -88,6 +97,9 @@ public class GameFactory {
         // Units are within bounds, do not stack, and follow terrain rules
         Set<String> occupiedUnitTiles = new HashSet<>();
         for (GameMapData.UnitInitData u : mapData.units()) {
+            if (!validUnits.contains(u.type())) {
+                throw new Exception("CRITICAL DATA ERROR: Invalid unit type '" + u.type() + "'. Expected one of: " + validUnits);
+            }
             // Bounds Check
             if (u.x() < 0 || u.x() >= width || u.y() < 0 || u.y() >= height) {
                 throw new Exception("Unit '" + u.type() + "' is placed completely off the map at coordinates (" + u.x() + ", " + u.y() + ").");
