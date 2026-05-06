@@ -38,6 +38,7 @@ public class App extends Application {
             game.createUnit("Pěchota", "Player 2", 4, 4);
             game.createUnit("Tank", "Player 1", 1, 2); 
             game.createUnit("Pěchota", "Player 2", 4, 3);
+            game.createUnit("Dělostřelectvo", "Player 1", 1, 3);
 
             // Initialize the root layout
             BorderPane root = new BorderPane();

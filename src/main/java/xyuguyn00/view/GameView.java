@@ -1,8 +1,9 @@
 package xyuguyn00.view;
 
-import javafx.geometry.Side;
+import javafx.application.Platform;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -20,18 +21,19 @@ import xyuguyn00.tool.GameObserver;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * The graphical representation of the game board.
- * Handles rendering, mouse interactivity, path visualization, and the Action Menu.
- */
 public class GameView extends GridPane implements GameObserver {
     private final Game game;
     private final int tileSize = 60; 
 
     // --- Interactivity State ---
     private Position selectedPosition = null;
+    private Position previewPosition = null; 
     private List<Position> reachablePositions = new ArrayList<>();
+    
+    // --- Combat State ---
     private ContextMenu activeMenu = null;
+    private boolean isTargeting = false; 
+    private List<Position> validTargets = new ArrayList<>();
 
     public GameView(Game game) {
         this.game = game;
@@ -40,13 +42,34 @@ public class GameView extends GridPane implements GameObserver {
         render();
     }
 
-    private void handleTileClick(Position clickedPos, StackPane clickedNode) {
+    private void handleTileClick(Position clickedPos, MouseEvent event) {   
+        if (isTargeting) {
+            if (validTargets.contains(clickedPos)) {
+                Position moveFrom = selectedPosition;
+                Position moveTo = previewPosition;
+                Position target = clickedPos;
+
+                // Commit the move, then strike using the cached variables
+                game.moveUnit(moveFrom, moveTo); 
+                game.attack(moveTo, target); 
+                
+                clearSelection(); 
+            } else {
+                // User clicked somewhere else. Cancel targeting and reopen the menu.
+                isTargeting = false;
+                showActionMenu(previewPosition, event.getScreenX(), event.getScreenY());
+                render();
+            }
+            return;
+        }
+
+        // 2. Menu Safety Catch
         if (activeMenu != null && activeMenu.isShowing()) {
-            activeMenu.hide();
-            activeMenu = null;
+            clearSelection();
             return; 
         }
 
+        // 3. Select a Unit
         if (selectedPosition == null) {
             Unit unit = game.getUnitAt(clickedPos);
             if (unit != null && unit.getPlayer().equals(game.getCurrentPlayer()) && !unit.hasMoved()) {
@@ -54,159 +77,202 @@ public class GameView extends GridPane implements GameObserver {
                 reachablePositions = game.getReachableTiles(clickedPos);
                 render(); 
             }
-        } else {
-            Unit targetUnit = game.getUnitAt(clickedPos);
-            
-            // Check if user clicked an enemy unit
-            if (targetUnit != null && !targetUnit.getPlayer().equals(game.getCurrentPlayer())) {
-                // Calculate Manhattan distance
-                int distance = Math.abs(selectedPosition.getX() - clickedPos.getX()) + 
-                               Math.abs(selectedPosition.getY() - clickedPos.getY());
-                               
-                if (distance == 1) {
-                    showAttackMenu(selectedPosition, clickedPos, clickedNode);
-                } else {
-                    clearSelection(); // Too far to attack
-                }
-            } 
-            // Otherwise, check if user clicked a valid empty tile to move
-            else if (reachablePositions.contains(clickedPos)) {
-                showActionMenu(clickedPos, clickedNode);
+        } 
+        // 4. Preview Move
+        else if (previewPosition == null) {
+            if (reachablePositions.contains(clickedPos)) {
+                previewPosition = clickedPos; 
+                showActionMenu(previewPosition, event.getScreenX(), event.getScreenY());
+                render(); 
             } else {
-                clearSelection();
+                clearSelection(); 
             }
         }
     }
 
-    private void showActionMenu(Position targetPos, StackPane anchorNode) {
+    private void showActionMenu(Position targetPos, double screenX, double screenY) {
         activeMenu = new ContextMenu();
         activeMenu.setStyle("-fx-base: #3c3c3c; -fx-font-size: 14px; -fx-font-weight: bold;");
 
-        MenuItem waitItem = new MenuItem("Wait (Confirm Move)");
+        // --- CALCULATE VALID COMBAT TARGETS ---
+        validTargets.clear();
+        Unit attacker = game.getUnitAt(selectedPosition);
+        
+        // Spec Rule: Artillery cannot move and attack in the same turn.
+        boolean canAttack = true;
+        if (attacker.getType().equals("Dělostřelectvo") && !selectedPosition.equals(previewPosition)) {
+            canAttack = false; 
+        }
+
+        if (canAttack) {
+            for (int r = 0; r < game.getHeight(); r++) {
+                for (int c = 0; c < game.getWidth(); c++) {
+                    Position p = new Position(r, c);
+                    Unit targetUnit = game.getUnitAt(p);
+                    
+                    // Check if there is an enemy at this coordinate
+                    if (targetUnit != null && !targetUnit.getPlayer().equals(attacker.getPlayer())) {
+                        // Calculate Manhattan distance from the PREVIEW position, not the start position!
+                        int distance = Math.abs(previewPosition.getX() - p.getX()) + 
+                                       Math.abs(previewPosition.getY() - p.getY());
+                                       
+                        if (distance >= attacker.getMinAttackRange() && distance <= attacker.getMaxAttackRange()) {
+                            validTargets.add(p);
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- DYNAMIC MENU OPTIONS ---
+        
+        if (!validTargets.isEmpty()) {
+            MenuItem attackItem = new MenuItem("Attack");
+            attackItem.setOnAction(e -> {
+                if (activeMenu != null) activeMenu.setOnHidden(null);
+                activeMenu.hide();
+                isTargeting = true; // Enter targeting mode!
+                render();
+            });
+            activeMenu.getItems().add(attackItem);
+        }
+
+        MenuItem waitItem = new MenuItem("Wait");
         waitItem.setOnAction(e -> {
-            game.moveUnit(selectedPosition, targetPos);
-            clearSelection();
+            Position from = selectedPosition;
+            Position to = previewPosition;
+            
+            if (activeMenu != null) activeMenu.setOnHidden(null); 
+            clearSelection(); 
+            
+            if (from != null && to != null) {
+                game.moveUnit(from, to); 
+            }
         });
 
         MenuItem cancelItem = new MenuItem("Cancel");
         cancelItem.setOnAction(e -> clearSelection());
 
+        activeMenu.setOnHidden(e -> clearSelection());
         activeMenu.getItems().addAll(waitItem, cancelItem);
-        activeMenu.show(anchorNode, Side.RIGHT, 0, 0);
-    }
-
-    private void showAttackMenu(Position attackerPos, Position defenderPos, StackPane anchorNode) {
-        activeMenu = new ContextMenu();
-        activeMenu.setStyle("-fx-base: #8b0000; -fx-font-size: 14px; -fx-font-weight: bold;"); 
-
-        MenuItem attackItem = new MenuItem("Attack Enemy");
-        attackItem.setOnAction(e -> {
-            game.attack(attackerPos, defenderPos);
-            clearSelection();
-        });
-
-        MenuItem cancelItem = new MenuItem("Cancel");
-        cancelItem.setOnAction(e -> clearSelection());
-
-        activeMenu.getItems().addAll(attackItem, cancelItem);
-        activeMenu.show(anchorNode, Side.RIGHT, 0, 0);
+        activeMenu.show(this, screenX, screenY);
     }
 
     private void clearSelection() {
         selectedPosition = null;
+        previewPosition = null;
         reachablePositions.clear();
-        if (activeMenu != null) {
-            activeMenu.hide();
-            activeMenu = null;
+        isTargeting = false;
+        validTargets.clear();
+        
+        ContextMenu menuToHide = activeMenu;
+        activeMenu = null; 
+        if (menuToHide != null && menuToHide.isShowing()) {
+            menuToHide.hide();
         }
+        
         render();
     }
 
     private void render() {
-        this.getChildren().clear();
-        String[] map = game.getMapDefinition();
+        Platform.runLater(() -> {
+            this.getChildren().clear();
+            String[] map = game.getMapDefinition();
 
-        for (int row = 0; row < game.getHeight(); row++) {
-            String rowStr = map[row].replace(" ", "");
-            
-            for (int col = 0; col < game.getWidth(); col++) {
-                char terrainChar = rowStr.charAt(col);
-                Position pos = new Position(row, col); 
+            for (int row = 0; row < game.getHeight(); row++) {
+                String rowStr = map[row].replace(" ", "");
+                for (int col = 0; col < game.getWidth(); col++) {
+                    char terrainChar = rowStr.charAt(col);
+                    Position pos = new Position(row, col); 
 
-                StackPane tile = new StackPane();
-                tile.setOnMouseClicked(event -> handleTileClick(pos, tile));
+                    StackPane tile = new StackPane();
+                    tile.setOnMouseClicked(event -> handleTileClick(pos, event));
 
-                // 1. Draw the Background Terrain
-                Rectangle bg = new Rectangle(tileSize, tileSize);
-                bg.setFill(getTerrainColor(terrainChar));
-                bg.setStroke(Color.BLACK); 
-                bg.setStrokeWidth(0.5);
-                tile.getChildren().add(bg);
+                    // 1. Background
+                    Rectangle bg = new Rectangle(tileSize, tileSize);
+                    bg.setFill(getTerrainColor(terrainChar));
+                    bg.setStroke(Color.BLACK); 
+                    bg.setStrokeWidth(0.5);
+                    tile.getChildren().add(bg);
 
-                // 2. Draw Visual Highlights
-                if (pos.equals(selectedPosition)) {
-                    Rectangle highlight = new Rectangle(tileSize, tileSize);
-                    highlight.setFill(Color.rgb(255, 255, 0, 0.4)); 
-                    tile.getChildren().add(highlight);
-                } else if (reachablePositions.contains(pos)) {
-                    Rectangle pathTarget = new Rectangle(tileSize, tileSize);
-                    pathTarget.setFill(Color.rgb(255, 255, 255, 0.5)); 
-                    pathTarget.setStroke(Color.WHITE);
-                    pathTarget.setStrokeWidth(2);
-                    tile.getChildren().add(pathTarget);
-                }
-
-                // 3. Draw the Unit
-                Unit unit = game.getUnitAt(pos);
-                if (unit != null) {
-                    Circle token = new Circle(tileSize / 2.5);
-                    token.setFill(unit.getPlayer().equals("Player 1") ? Color.DARKBLUE : Color.DARKRED);
-                    token.setStroke(Color.WHITE);
-                    token.setStrokeWidth(2);
-
-                    Text label = new Text(unit.getType().substring(0, 1));
-                    label.setFill(Color.WHITE);
-                    label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-                    
-                    // --- New HP Visualizer ---
-                    Text hpLabel = new Text(unit.getHp() + " HP");
-                    hpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
-                    hpLabel.setTranslateY(18); // Push it below the center
-                    
-                    // Color code the HP text based on remaining health
-                    if (unit.getHp() > 50) hpLabel.setFill(Color.LIGHTGREEN);
-                    else if (unit.getHp() > 20) hpLabel.setFill(Color.YELLOW);
-                    else hpLabel.setFill(Color.RED);
-
-                    if (unit.hasMoved()) {
-                        token.setOpacity(0.4); 
-                        label.setOpacity(0.4);
-                        hpLabel.setOpacity(0.4);
+                    // 2. Highlights
+                    if (isTargeting && validTargets.contains(pos)) {
+                        // Draw red targeting crosshair overlay
+                        Rectangle crosshair = new Rectangle(tileSize, tileSize);
+                        crosshair.setFill(Color.rgb(255, 0, 0, 0.4)); 
+                        crosshair.setStroke(Color.RED);
+                        crosshair.setStrokeWidth(3);
+                        tile.getChildren().add(crosshair);
+                    } else if (pos.equals(selectedPosition) && previewPosition == null) {
+                        Rectangle highlight = new Rectangle(tileSize, tileSize);
+                        highlight.setFill(Color.rgb(255, 255, 0, 0.4)); 
+                        tile.getChildren().add(highlight);
+                    } else if (reachablePositions.contains(pos) && previewPosition == null) {
+                        Rectangle pathTarget = new Rectangle(tileSize, tileSize);
+                        pathTarget.setFill(Color.rgb(255, 255, 255, 0.5)); 
+                        pathTarget.setStroke(Color.WHITE);
+                        pathTarget.setStrokeWidth(2);
+                        tile.getChildren().add(pathTarget);
                     }
-                    
-                    tile.getChildren().addAll(token, label, hpLabel);
-                }
 
-                this.add(tile, col, row); 
+                    // 3. Unit Rendering (with preview logic)
+                    Unit unit = game.getUnitAt(pos);
+                    if (previewPosition != null) {
+                        if (pos.equals(previewPosition)) {
+                            unit = game.getUnitAt(selectedPosition); 
+                        } else if (pos.equals(selectedPosition)) {
+                            unit = null; 
+                        }
+                    }
+
+                    if (unit != null) {
+                        Circle token = new Circle(tileSize / 2.5);
+                        token.setFill(unit.getPlayer().equals("Player 1") ? Color.DARKBLUE : Color.DARKRED);
+                        token.setStroke(Color.WHITE);
+                        token.setStrokeWidth(2);
+
+                        Text label = new Text(unit.getType().substring(0, 1));
+                        label.setFill(Color.WHITE);
+                        label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+                        
+                        Text hpLabel = new Text(unit.getHp() + " HP");
+                        hpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+                        hpLabel.setTranslateY(18); 
+                        
+                        if (unit.getHp() > 50) hpLabel.setFill(Color.LIGHTGREEN);
+                        else if (unit.getHp() > 20) hpLabel.setFill(Color.YELLOW);
+                        else hpLabel.setFill(Color.RED);
+
+                        if (unit.hasMoved()) {
+                            token.setOpacity(0.4); 
+                            label.setOpacity(0.4);
+                            hpLabel.setOpacity(0.4);
+                        }
+                        
+                        tile.getChildren().addAll(token, label, hpLabel);
+                    }
+
+                    this.add(tile, col, row); 
+                }
             }
-        }
+        });
     }
 
     private Color getTerrainColor(char t) {
         return switch (t) {
-            case 'P' -> Color.web("#90EE90"); // Plain
-            case 'F' -> Color.web("#228B22"); // Forest
-            case 'M' -> Color.web("#808080"); // Mountain
-            case 'W' -> Color.web("#4169E1"); // Water
-            case 'C' -> Color.web("#D3D3D3"); // City
-            case 'T' -> Color.web("#CD853F"); // Factory
-            case 'H' -> Color.web("#FFD700"); // HQ
+            case 'P' -> Color.web("#90EE90");
+            case 'F' -> Color.web("#228B22");
+            case 'M' -> Color.web("#808080");
+            case 'W' -> Color.web("#4169E1");
+            case 'C' -> Color.web("#D3D3D3");
+            case 'T' -> Color.web("#CD853F");
+            case 'H' -> Color.web("#FFD700");
             default -> Color.WHITE;
         };
     }
 
     @Override
     public void update(GameEvent event) {
-        render();
+        clearSelection(); 
     }
 }
