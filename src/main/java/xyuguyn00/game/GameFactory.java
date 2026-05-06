@@ -54,37 +54,62 @@ public class GameFactory {
         int width = mapData.width();
         int height = mapData.height();
 
-        // Layout matches dimensions
+        // Check 1: Layout matches dimensions
         if (mapData.layout().size() != height) {
             throw new Exception("JSON Layout row count does not match the 'height' parameter.");
         }
+        for (String row : mapData.layout()) {
+            // Remove spaces before checking length to match how the engine parses it
+            if (row.replace(" ", "").length() != width) {
+                throw new Exception("JSON Layout row length does not match the 'width' parameter.");
+            }
+        }
 
-        // Buildings are within bounds and logical
+        // Buildings are within bounds, logical, and do not stack
+        Set<String> occupiedBuildingTiles = new HashSet<>();
         for (GameMapData.BuildingInitData b : mapData.buildings()) {
             if (b.x() < 0 || b.x() >= width || b.y() < 0 || b.y() >= height) {
                 throw new Exception("Building '" + b.type() + "' is placed completely off the map at coordinates (" + b.x() + ", " + b.y() + ").");
             }
             
+            // NEW: Building Stacking Check
+            String coordKey = b.x() + "," + b.y();
+            if (occupiedBuildingTiles.contains(coordKey)) {
+                throw new Exception("CRITICAL DATA ERROR: Multiple buildings placed on the same tile at coordinates (" + b.x() + ", " + b.y() + ")!");
+            }
+            occupiedBuildingTiles.add(coordKey);
+
             char terrainChar = mapData.layout().get(b.y()).replace(" ", "").charAt(b.x());
             if (terrainChar == 'W' || terrainChar == 'M') {
                 throw new Exception("CRITICAL DATA ERROR: Building '" + b.type() + "' at (" + b.x() + ", " + b.y() + ") is placed on impassable terrain (Water/Mountain)!");
             }
         }
 
-        // Units are within bounds AND do not overlap (Stacking Rule)
-        Set<String> occupiedTiles = new HashSet<>();
+        // Units are within bounds, do not stack, and follow terrain rules
+        Set<String> occupiedUnitTiles = new HashSet<>();
         for (GameMapData.UnitInitData u : mapData.units()) {
             // Bounds Check
             if (u.x() < 0 || u.x() >= width || u.y() < 0 || u.y() >= height) {
                 throw new Exception("Unit '" + u.type() + "' is placed completely off the map at coordinates (" + u.x() + ", " + u.y() + ").");
             }
             
-            // Collision / Stacking Check
+            // Stacking Check
             String coordKey = u.x() + "," + u.y();
-            if (occupiedTiles.contains(coordKey)) {
+            if (occupiedUnitTiles.contains(coordKey)) {
                 throw new Exception("CRITICAL DATA ERROR: Multiple units placed on the same tile at coordinates (" + u.x() + ", " + u.y() + ")!");
             }
-            occupiedTiles.add(coordKey);
+            occupiedUnitTiles.add(coordKey);
+
+            // Terrain Passability Check
+            char terrainChar = mapData.layout().get(u.y()).replace(" ", "").charAt(u.x());
+            
+            if (terrainChar == 'W') {
+                throw new Exception("CRITICAL DATA ERROR: Unit placed on impassable terrain (Water) at (" + u.x() + ", " + u.y() + ")!");
+            }
+            
+            if (terrainChar == 'M' && (u.type().equals("Tank") || u.type().equals("Dělostřelectvo"))) {
+                throw new Exception("CRITICAL DATA ERROR: Vehicle placed on impassable Mountain at (" + u.x() + ", " + u.y() + ")!");
+            }
         }
     }
 }   
