@@ -123,5 +123,20 @@ public class GameFactory {
                 throw new Exception("CRITICAL DATA ERROR: Vehicle placed on impassable Mountain at (" + u.x() + ", " + u.y() + ")!");
             }
         }
+
+        // --- HQ Ownership Validation ---
+        int p1HqCount = 0;
+        int p2HqCount = 0;
+
+        for (GameMapData.BuildingInitData b : mapData.buildings()) {
+            if (b.type().equals("Velitelství")) {
+                if (b.owner().equals("Player 1")) p1HqCount++;
+                else if (b.owner().equals("Player 2")) p2HqCount++;
+            }
+        }
+
+        if (p1HqCount != 1 || p2HqCount != 1) {
+            throw new Exception("CRITICAL DATA ERROR: Each player must have exactly one HQ (Velitelství). Found Player 1: " + p1HqCount + ", Player 2: " + p2HqCount);
+        }
     }
 }   
