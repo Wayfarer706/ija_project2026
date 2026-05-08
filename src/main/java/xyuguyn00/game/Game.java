@@ -13,6 +13,7 @@ import xyuguyn00.tool.GameObserver;
 import xyuguyn00.tool.Observable;
 import xyuguyn00.model.TerrainData;
 import xyuguyn00.model.UnitDamageData;
+import xyuguyn00.common.UnitType;
 
 /**
  * Main engine and state manager for the game.
@@ -59,6 +60,10 @@ public class Game implements Observable {
         Unit unit = unitFactory.createUnit(type, player, position);
         units.put(position, unit);
         return unit;
+    }
+
+    public Unit createUnit(UnitType type, String player, int x, int y) {
+        return createUnit(type.getCzechName(), player, x, y);
     }
 
     // --- MVC Observer Pattern Implementation ---
@@ -191,7 +196,7 @@ public class Game implements Observable {
 
         // Validation: Must have a unit, a building, unit must be Infantry, and building must be enemy/neutral
         if (unit == null || building == null) return false;
-        if (!unit.getType().equals("Pěchota")) return false;
+        if (unit.getUnitType() != UnitType.INFANTRY) return false;
         if (building.getOwner().equals(unit.getPlayer())) return false;
 
         // Math: 10% of current HP rounded down
@@ -374,6 +379,10 @@ public class Game implements Observable {
         return unitFactory.getUnitCost(type);
     }
 
+    public int getUnitCost(UnitType type) {
+        return getUnitCost(type.getCzechName());
+    }
+
     public boolean purchaseUnit(String unitType, Position pos) {
         int cost = getUnitCost(unitType);
         int currentFunds = playerFunds.getOrDefault(currentPlayer, 0);
@@ -390,6 +399,10 @@ public class Game implements Observable {
             return true;
         }
         return false;
+    }
+
+    public boolean purchaseUnit(UnitType type, Position pos) {
+        return purchaseUnit(type.getCzechName(), pos);
     }
 
     // --- Getters for the View Layer ---

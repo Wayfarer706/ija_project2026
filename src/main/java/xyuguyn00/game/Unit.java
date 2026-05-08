@@ -3,6 +3,7 @@ package xyuguyn00.game;
 import xyuguyn00.common.Position;
 import xyuguyn00.model.UnitData;
 import xyuguyn00.model.TerrainData;
+import xyuguyn00.common.UnitType;
 
 /**
  * Represents an active entity on the game board.
@@ -59,6 +60,10 @@ public class Unit {
             return terrain.infantryCost();
         }
         return -1; // Unknown movement type or impassable
+    }
+
+    public UnitType getUnitType() {
+        return UnitType.fromCzechName(data.unitName());
     }
 
     @Override
