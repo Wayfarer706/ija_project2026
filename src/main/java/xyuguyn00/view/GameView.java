@@ -30,6 +30,10 @@ public class GameView extends GridPane implements GameObserver {
     private Position selectedPosition = null;
     private Position previewPosition = null; 
     private List<Position> reachablePositions = new ArrayList<>();
+
+    // Pathfinding UI State
+    private Position hoveredPosition = null;
+    private List<Position> currentPath = new ArrayList<>();
     
     // --- Combat State ---
     private ContextMenu activeMenu = null;
@@ -183,6 +187,10 @@ public class GameView extends GridPane implements GameObserver {
         isTargeting = false;
         validTargets.clear();
         
+        // Clear path UI
+        hoveredPosition = null;
+        currentPath.clear();
+        
         ContextMenu menuToHide = activeMenu;
         activeMenu = null; 
         if (menuToHide != null && menuToHide.isShowing()) {
@@ -228,6 +236,25 @@ public class GameView extends GridPane implements GameObserver {
                         }
                     });
 
+                    // Track mouse hover for path drawing
+                    tile.setOnMouseEntered(e -> {
+                        // Only draw paths if a unit is selected, but hasn't finalized a move yet
+                        if (selectedPosition != null && previewPosition == null) {
+                            if (reachablePositions.contains(pos)) {
+                                if (!pos.equals(hoveredPosition)) {
+                                    hoveredPosition = pos;
+                                    currentPath = game.getPath(selectedPosition, pos);
+                                    render(); // Re-render to show the breadcrumbs
+                                }
+                            } else if (hoveredPosition != null) {
+                                // Mouse left the valid movement area, clear the path
+                                hoveredPosition = null;
+                                currentPath.clear();
+                                render();
+                            }
+                        }
+                    });
+
                     // Background
                     Rectangle bg = new Rectangle(tileSize, tileSize);
                     bg.setFill(getTerrainColor(terrainChar));
@@ -266,6 +293,20 @@ public class GameView extends GridPane implements GameObserver {
                         pathTarget.setStroke(Color.WHITE);
                         pathTarget.setStrokeWidth(2);
                         tile.getChildren().add(pathTarget);
+                    } else if (reachablePositions.contains(pos) && previewPosition == null) {
+                        Rectangle pathTarget = new Rectangle(tileSize, tileSize);
+                        pathTarget.setFill(Color.rgb(255, 255, 255, 0.5)); 
+                        pathTarget.setStroke(Color.WHITE);
+                        pathTarget.setStrokeWidth(2);
+                        tile.getChildren().add(pathTarget);
+                    }
+
+                    // Draw breadcrumb dots for the movement path
+                    if (currentPath.contains(pos)) {
+                        Circle pathDot = new Circle(tileSize / 8.0); 
+                        pathDot.setFill(Color.WHITE);
+                        pathDot.setOpacity(0.8);
+                        tile.getChildren().add(pathDot);
                     }
 
                     // Unit Rendering (with preview logic)
