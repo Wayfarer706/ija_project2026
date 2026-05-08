@@ -268,7 +268,7 @@ public class Game implements Observable {
                     if (terrainData != null) {
                         int stepCost = unit.getTerrainCost(terrainData);
 
-                        if (stepCost != -1) { 
+                        if (stepCost >= 0 && stepCost < 99) { 
                             int newCost = current.cost + stepCost;
                             
                             if (newCost <= maxMove && newCost < costMap.getOrDefault(nextPos, Integer.MAX_VALUE)) {
@@ -291,6 +291,79 @@ public class Game implements Observable {
         }
         
         return validDestinations;
+    }
+
+    /**
+     * Calculates the exact shortest path from a start tile to a target tile.
+     */
+    public List<Position> getPath(Position start, Position target) {
+        Unit unit = units.get(start);
+        if (unit == null) return new ArrayList<>();
+
+        int maxMove = unit.getMaxMove();
+        Map<Position, Integer> costMap = new HashMap<>();
+        Map<Position, Position> cameFrom = new HashMap<>(); // NEW: Tracks the breadcrumb trail
+        PriorityQueue<Node> pq = new PriorityQueue<>(Comparator.comparingInt(n -> n.cost));
+
+        costMap.put(start, 0);
+        pq.add(new Node(start, 0));
+
+        int[] dRow = {1, -1, 0, 0}; 
+        int[] dCol = {0, 0, 1, -1}; 
+
+        while (!pq.isEmpty()) {
+            Node current = pq.poll();
+
+            // Stop calculating if we reached the target!
+            if (current.pos.equals(target)) break;
+
+            if (current.cost > costMap.getOrDefault(current.pos, Integer.MAX_VALUE)) continue;
+
+            for (int i = 0; i < 4; i++) {
+                int nextRow = current.pos.getX() + dRow[i]; 
+                int nextCol = current.pos.getY() + dCol[i]; 
+                char terrainChar = getTerrainAt(nextRow, nextCol);
+                
+                if (terrainChar != '\0') {
+                    Position nextPos = new Position(nextRow, nextCol);
+
+                    Unit occupyingUnit = units.get(nextPos);
+                    if (occupyingUnit != null && !occupyingUnit.getPlayer().equals(unit.getPlayer())) {
+                        continue; // Treat enemies as solid walls
+                    }
+
+                    String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
+                    TerrainData terrainData = terrainRules.get(terrainName);
+
+                    if (terrainData != null) {
+                        int stepCost = unit.getTerrainCost(terrainData);
+
+                        if (stepCost >= 0 && stepCost < 99) { 
+                            int newCost = current.cost + stepCost;
+                            
+                            if (newCost <= maxMove && newCost < costMap.getOrDefault(nextPos, Integer.MAX_VALUE)) {
+                                costMap.put(nextPos, newCost);
+                                cameFrom.put(nextPos, current.pos); // Drop a breadcrumb pointing backward
+                                pq.add(new Node(nextPos, newCost));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Reconstruct the path by walking backward from the target
+        List<Position> path = new ArrayList<>();
+        if (!cameFrom.containsKey(target) && !start.equals(target)) {
+            return path; // No valid path exists
+        }
+
+        Position current = target;
+        while (current != null && !current.equals(start)) {
+            path.add(0, current); // Add to the front of the list
+            current = cameFrom.get(current);
+        }
+        return path;
     }
 
     public String[] getMapDefinition() { return mapDefinition; }

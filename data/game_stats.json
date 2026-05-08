@@ -2,27 +2,23 @@
   "width": 7,
   "height": 7,
   "layout": [
-    "P P F M H P P",
-    "P C P F P P P",
-    "P P T P P P P",
-    "M F P C W P P",
-    "H P P P P P P",
+    "P P P M M W P",
+    "P P P M M W P",
+    "P P F P P W P",
+    "P F F P P P P",
+    "P P P C T H P",
     "P P P P P P P",
     "P P P P P P P"
   ],
   "buildings": [
-    { "x": 1, "y": 1, "type": "Město", "owner": "Neutral" },
-    { "x": 3, "y": 3, "type": "Město", "owner": "Neutral" },
-    { "x": 2, "y": 2, "type": "Továrna", "owner": "Player 1" }, 
-    { "x": 4, "y": 0, "type": "Velitelství", "owner": "Player 1" },
-    { "x": 0, "y": 4, "type": "Velitelství", "owner": "Player 2" } 
+    { "x": 3, "y": 4, "type": "Město", "owner": "Neutral" },
+    { "x": 4, "y": 4, "type": "Továrna", "owner": "Player 1" },
+    { "x": 5, "y": 4, "type": "Velitelství", "owner": "Player 1" }
   ],
   "units": [
-    { "x": 0, "y": 0, "type": "Tank", "owner": "Player 1" },
-    { "x": 1, "y": 2, "type": "Tank", "owner": "Player 1" },
-    { "x": 1, "y": 0, "type": "Dělostřelectvo", "owner": "Player 1" },
-    { "x": 1, "y": 3, "type": "Pěchota", "owner": "Player 1" },
-    { "x": 4, "y": 4, "type": "Pěchota", "owner": "Player 2" },
-    { "x": 3, "y": 3, "type": "Pěchota", "owner": "Player 2" }
+    { "x": 1, "y": 1, "type": "Pěchota", "owner": "Player 1" },
+    { "x": 1, "y": 3, "type": "Tank", "owner": "Player 1" },
+    { "x": 4, "y": 5, "type": "Dělostřelectvo", "owner": "Player 1" },
+    { "x": 3, "y": 3, "type": "Tank", "owner": "Player 2" }
   ]
 }
