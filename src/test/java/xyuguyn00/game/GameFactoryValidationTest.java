@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class GameFactoryValidationTest {
 
-    // Helper method to create a clean, default map template for testing
     private GameMapData createTestMap(List<GameMapData.BuildingInitData> buildings, List<GameMapData.UnitInitData> units) {
         return new GameMapData(
             5, 5,
@@ -34,7 +33,11 @@ public class GameFactoryValidationTest {
     @Test
     public void testValidDataPassesValidation() {
         GameMapData data = createTestMap(
-            List.of(new GameMapData.BuildingInitData(1, 1, "Město", "Neutral")),
+            List.of(
+                new GameMapData.BuildingInitData(1, 1, "Město", "Neutral"),
+                new GameMapData.BuildingInitData(0, 2, "Velitelství", "Player 1"), // Added P1 HQ
+                new GameMapData.BuildingInitData(2, 2, "Velitelství", "Player 2")  // Added P2 HQ
+            ),
             List.of(
                 new GameMapData.UnitInitData(0, 0, "Tank", "Player 1"),
                 new GameMapData.UnitInitData(1, 0, "Pěchota", "Player 2")
@@ -47,14 +50,19 @@ public class GameFactoryValidationTest {
     public void testInfantryOnMountainPassesValidation() {
         GameMapData data = createCustomMap(
             List.of(
+                "P M P P P",
                 "P P P P P",
-                "P P M P P", // Mountain at (2, 1)
                 "P P P P P",
                 "P P P P P",
                 "P P P P P"
             ),
-            List.of(),
-            List.of(new GameMapData.UnitInitData(2, 1, "Pěchota", "Player 1")) // Infantry on Mountain is allowed
+            List.of(
+                new GameMapData.BuildingInitData(0, 2, "Velitelství", "Player 1"),
+                new GameMapData.BuildingInitData(2, 2, "Velitelství", "Player 2")
+            ),
+            List.of(
+                new GameMapData.UnitInitData(1, 0, "Pěchota", "Player 1")
+            )
         );
         assertDoesNotThrow(() -> GameFactory.validateMapData(data));
     }
@@ -117,13 +125,13 @@ public class GameFactoryValidationTest {
         GameMapData data = createCustomMap(
             List.of(
                 "P P P P P",
-                "P W P P P", // Water at (1, 1)
+                "P W P P P", 
                 "P P P P P",
                 "P P P P P",
                 "P P P P P"
             ),
             List.of(),
-            List.of(new GameMapData.UnitInitData(1, 1, "Pěchota", "Player 2")) // Illegal: Unit in water
+            List.of(new GameMapData.UnitInitData(1, 1, "Pěchota", "Player 2")) 
         );
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("impassable terrain"));
@@ -134,13 +142,13 @@ public class GameFactoryValidationTest {
         GameMapData data = createCustomMap(
             List.of(
                 "P P P P P",
-                "P M P P P", // Mountain at (1, 1)
+                "P M P P P", 
                 "P P P P P",
                 "P P P P P",
                 "P P P P P"
             ),
             List.of(),
-            List.of(new GameMapData.UnitInitData(1, 1, "Tank", "Player 1")) // Illegal: Vehicle on Mountain
+            List.of(new GameMapData.UnitInitData(1, 1, "Tank", "Player 1")) 
         );
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("Vehicle placed on impassable Mountain"));
@@ -151,12 +159,12 @@ public class GameFactoryValidationTest {
         GameMapData data = createCustomMap(
             List.of(
                 "P P P P P",
-                "P P W P P", // Water at (2, 1)
+                "P P W P P", 
                 "P P P P P",
                 "P P P P P",
                 "P P P P P"
             ),
-            List.of(new GameMapData.BuildingInitData(2, 1, "Továrna", "Neutral")), // Illegal: Factory on Water
+            List.of(new GameMapData.BuildingInitData(2, 1, "Továrna", "Neutral")), 
             List.of()
         );
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
@@ -184,7 +192,7 @@ public class GameFactoryValidationTest {
     @Test
     public void testInvalidBuildingTypeThrowsException() {
         GameMapData data = createTestMap(
-            List.of(new GameMapData.BuildingInitData(1, 1, "Tank", "Player 1")), // ILLEGAL: Tank is not a building
+            List.of(new GameMapData.BuildingInitData(1, 1, "Tank", "Player 1")), 
             List.of()
         );
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
@@ -195,9 +203,37 @@ public class GameFactoryValidationTest {
     public void testInvalidUnitTypeThrowsException() {
         GameMapData data = createTestMap(
             List.of(),
-            List.of(new GameMapData.UnitInitData(1, 1, "Město", "Player 1")) // ILLEGAL: Město is not a unit
+            List.of(new GameMapData.UnitInitData(1, 1, "Město", "Player 1")) 
         );
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("Invalid unit type"));
+    }
+
+    // --- 6. HQ Rule Tests ---
+
+    @Test
+    public void testMissingPlayerHQThrowsException() {
+        GameMapData data = createTestMap(
+            List.of(
+                new GameMapData.BuildingInitData(0, 2, "Velitelství", "Player 1")
+            ),
+            List.of()
+        );
+        Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
+        assertTrue(exception.getMessage().contains("exactly one HQ"));
+    }
+
+    @Test
+    public void testMultiplePlayerHQThrowsException() {
+        GameMapData data = createTestMap(
+            List.of(
+                new GameMapData.BuildingInitData(0, 2, "Velitelství", "Player 1"),
+                new GameMapData.BuildingInitData(1, 2, "Velitelství", "Player 1"), 
+                new GameMapData.BuildingInitData(2, 2, "Velitelství", "Player 2")
+            ),
+            List.of()
+        );
+        Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
+        assertTrue(exception.getMessage().contains("exactly one HQ"));
     }
 }
