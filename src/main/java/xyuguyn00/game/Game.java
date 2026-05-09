@@ -1,11 +1,10 @@
 package xyuguyn00.game;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.Set;
 
 import xyuguyn00.common.Position;
 import xyuguyn00.common.GameEvent;
@@ -14,6 +13,9 @@ import xyuguyn00.tool.Observable;
 import xyuguyn00.model.TerrainData;
 import xyuguyn00.model.UnitDamageData;
 import xyuguyn00.common.UnitType;
+import xyuguyn00.service.CombatService;
+import xyuguyn00.service.EconomyService;
+import xyuguyn00.service.PathfindingService;
 
 /**
  * Main engine and state manager for the game.
@@ -27,31 +29,22 @@ public class Game implements Observable {
     private final List<GameObserver> observers = new ArrayList<>();
     private final int width;
     private final int height;
+    private final CombatService combatService;
+    private final PathfindingService pathfindingService;
+    private final EconomyService economyService;
     private String currentPlayer = "Player 1"; 
 
     // Data-driven dependencies
     private final UnitFactory unitFactory;
-    private final Map<String, TerrainData> terrainRules;
-    private final List<UnitDamageData> damageRules;
-
-    // Maps the characters from the mapDefinition array to the names in terrain.tsv
-    private static final Map<Character, String> TERRAIN_CHAR_MAP = Map.of(
-        'P', "Pláň",
-        'F', "Les",
-        'M', "Hora",
-        'W', "Voda",
-        'C', "Město",
-        'T', "Továrna",
-        'H', "Velitelství"
-    );
 
     public Game(String[] mapDefinition, UnitFactory unitFactory, Map<String, TerrainData> terrainRules, List<UnitDamageData> damageRules) {
         this.mapDefinition = mapDefinition;
         this.width = mapDefinition[0].replace(" ", "").length();
         this.height = mapDefinition.length;
         this.unitFactory = unitFactory;
-        this.terrainRules = terrainRules;
-        this.damageRules = damageRules;
+        this.combatService = new CombatService(mapDefinition, terrainRules, damageRules);
+        this.pathfindingService = new PathfindingService(mapDefinition, terrainRules);
+        this.economyService = new EconomyService();
     }
 
     public Unit createUnit(String type, String player, int x, int y) {
@@ -64,6 +57,10 @@ public class Game implements Observable {
 
     public Unit createUnit(UnitType type, String player, int x, int y) {
         return createUnit(type.getCzechName(), player, x, y);
+    }
+
+    public Set<Position> getUnitPositions() {
+        return Set.copyOf(units.keySet());
     }
 
     // --- MVC Observer Pattern Implementation ---
@@ -83,15 +80,6 @@ public class Game implements Observable {
     }
 
     // --- Core Game Logic & Pathfinding ---
-
-    private static class Node {
-        Position pos;
-        int cost;
-        Node(Position pos, int cost) {
-            this.pos = pos;
-            this.cost = cost;
-        }
-    }
 
     public boolean moveUnit(Position from, Position to) {
         Unit unit = units.get(from);
@@ -120,73 +108,13 @@ public class Game implements Observable {
     // --- Combat Logic ---
 
     public boolean attack(Position attackerPos, Position defenderPos) {
-        Unit attacker = units.get(attackerPos);
-        Unit defender = units.get(defenderPos);
+        boolean attacked = combatService.attack(units, attackerPos, defenderPos);
 
-        if (attacker == null || defender == null) return false;
-
-        int attackDist = Math.abs(attackerPos.getX() - defenderPos.getX()) + 
-                         Math.abs(attackerPos.getY() - defenderPos.getY());
-        if (attackDist < attacker.getMinAttackRange() || attackDist > attacker.getMaxAttackRange()) {
-            return false; // Engine rejects out-of-range attacks!
+        if (attacked) {
+            notifyObservers();
         }
 
-        // Primary Attack (Attacker shoots first)
-        resolveStrike(attacker, defender, defenderPos);
-
-        // Counter-Attack (If defender survived)
-        if (!defender.isDead()) {
-            // Check if attacker is within the defender's attack range
-            int distance = Math.abs(attackerPos.getX() - defenderPos.getX()) + 
-                           Math.abs(attackerPos.getY() - defenderPos.getY());
-                           
-            if (distance >= defender.getMinAttackRange() && distance <= defender.getMaxAttackRange()) {
-                // Roles are reversed: Defender shoots back at the Attacker
-                resolveStrike(defender, attacker, attackerPos); 
-            }
-        }
-
-        // Resolve Deaths
-        if (defender.isDead()) units.remove(defenderPos);
-        if (attacker.isDead()) units.remove(attackerPos);
-
-        attacker.setMoved(true); // Commits the attacker's turn
-        notifyObservers();
-        return true;
-    }
-
-    /**
-     * Calculates and applies damage based on the strict deterministic formula:
-     * Damage = Floor(BaseDamage * (AttackerHP / 100) * (1 - TerrainBonus * 0.1))
-     */
-    private void resolveStrike(Unit attacker, Unit defender, Position defenderPos) {
-        // Find base damage from the matrix
-        int baseDamage = 0;
-        for (UnitDamageData rule : damageRules) {
-            if (rule.attacker().equals(attacker.getType()) && rule.defender().equals(defender.getType())) {
-                baseDamage = rule.damage();
-                break;
-            }
-        }
-
-        // Find terrain defense bonus
-        char terrainChar = getTerrainAt(defenderPos.getX(), defenderPos.getY());
-        String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
-        int defenseBonus = 0;
-        if (terrainRules.containsKey(terrainName)) {
-            defenseBonus = terrainRules.get(terrainName).defenseBonus();
-        }
-
-        // Apply the mathematical formula
-        double hpMultiplier = attacker.getHp() / 100.0;
-        double terrainMultiplier = 1.0 - (defenseBonus * 0.1);
-        
-        int finalDamage = (int) Math.floor(baseDamage * hpMultiplier * terrainMultiplier);
-
-        // Ensure we always do at least 0 damage (no healing from negative damage)
-        if (finalDamage < 0) finalDamage = 0;
-
-        defender.takeDamage(finalDamage);
+        return attacked;
     }
 
     // --- Capture Mechanics ---
@@ -219,156 +147,12 @@ public class Game implements Observable {
         return true;
     }
 
-    // -- Pathfinding algorithm for Unit movement --
-    private char getTerrainAt(int row, int col) {
-        if (row >= 0 && row < height && col >= 0 && col < width) {
-            return mapDefinition[row].replace(" ", "").charAt(col);
-        }
-        return '\0'; 
-    }
-
-    /**
-     * Calculates all valid positions a unit can reach in a single turn.
-     * Implements Dijkstra's algorithm to account for varying terrain costs.
-     */
     public List<Position> getReachableTiles(Position start) {
-        Unit unit = units.get(start);
-        if (unit == null) return new ArrayList<>();
-
-        int maxMove = unit.getMaxMove();
-        Map<Position, Integer> costMap = new HashMap<>();
-        PriorityQueue<Node> pq = new PriorityQueue<>(Comparator.comparingInt(n -> n.cost));
-
-        costMap.put(start, 0);
-        pq.add(new Node(start, 0));
-
-        int[] dRow = {1, -1, 0, 0}; 
-        int[] dCol = {0, 0, 1, -1}; 
-
-        while (!pq.isEmpty()) {
-            Node current = pq.poll();
-            if (current.cost > costMap.getOrDefault(current.pos, Integer.MAX_VALUE)) continue;
-
-            for (int i = 0; i < 4; i++) {
-                int nextRow = current.pos.getX() + dRow[i]; 
-                int nextCol = current.pos.getY() + dCol[i]; 
-
-                char terrainChar = getTerrainAt(nextRow, nextCol);
-                
-                if (terrainChar != '\0') {
-                    Position nextPos = new Position(nextRow, nextCol);
-
-                    Unit occupyingUnit = units.get(nextPos);
-                    if (occupyingUnit != null) {
-                        boolean isFriendly = occupyingUnit.getPlayer().equals(unit.getPlayer());
-                        // Enemy units act as a solid wall. 
-                        if (!isFriendly) {
-                            continue; 
-                        }
-                    }
-
-                    String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
-                    TerrainData terrainData = terrainRules.get(terrainName);
-
-                    if (terrainData != null) {
-                        int stepCost = unit.getTerrainCost(terrainData);
-
-                        if (stepCost >= 0 && stepCost < 99) { 
-                            int newCost = current.cost + stepCost;
-                            
-                            if (newCost <= maxMove && newCost < costMap.getOrDefault(nextPos, Integer.MAX_VALUE)) {
-                                costMap.put(nextPos, newCost);
-                                pq.add(new Node(nextPos, newCost));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Filter the reachable tiles. You can only end your turn on an empty tile, 
-        // or the exact tile you started on (moving 0 spaces).
-        List<Position> validDestinations = new ArrayList<>();
-        for (Position p : costMap.keySet()) {
-            if (p.equals(start) || units.get(p) == null) {
-                validDestinations.add(p);
-            }
-        }
-        
-        return validDestinations;
+        return pathfindingService.getReachableTiles(start, units);
     }
 
-    /**
-     * Calculates the exact shortest path from a start tile to a target tile.
-     */
     public List<Position> getPath(Position start, Position target) {
-        Unit unit = units.get(start);
-        if (unit == null) return new ArrayList<>();
-
-        int maxMove = unit.getMaxMove();
-        Map<Position, Integer> costMap = new HashMap<>();
-        Map<Position, Position> cameFrom = new HashMap<>(); // NEW: Tracks the breadcrumb trail
-        PriorityQueue<Node> pq = new PriorityQueue<>(Comparator.comparingInt(n -> n.cost));
-
-        costMap.put(start, 0);
-        pq.add(new Node(start, 0));
-
-        int[] dRow = {1, -1, 0, 0}; 
-        int[] dCol = {0, 0, 1, -1}; 
-
-        while (!pq.isEmpty()) {
-            Node current = pq.poll();
-
-            // Stop calculating if we reached the target!
-            if (current.pos.equals(target)) break;
-
-            if (current.cost > costMap.getOrDefault(current.pos, Integer.MAX_VALUE)) continue;
-
-            for (int i = 0; i < 4; i++) {
-                int nextRow = current.pos.getX() + dRow[i]; 
-                int nextCol = current.pos.getY() + dCol[i]; 
-                char terrainChar = getTerrainAt(nextRow, nextCol);
-                
-                if (terrainChar != '\0') {
-                    Position nextPos = new Position(nextRow, nextCol);
-
-                    Unit occupyingUnit = units.get(nextPos);
-                    if (occupyingUnit != null && !occupyingUnit.getPlayer().equals(unit.getPlayer())) {
-                        continue; // Treat enemies as solid walls
-                    }
-
-                    String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
-                    TerrainData terrainData = terrainRules.get(terrainName);
-
-                    if (terrainData != null) {
-                        int stepCost = unit.getTerrainCost(terrainData);
-
-                        if (stepCost >= 0 && stepCost < 99) { 
-                            int newCost = current.cost + stepCost;
-                            
-                            if (newCost <= maxMove && newCost < costMap.getOrDefault(nextPos, Integer.MAX_VALUE)) {
-                                costMap.put(nextPos, newCost);
-                                cameFrom.put(nextPos, current.pos); // Drop a breadcrumb pointing backward
-                                pq.add(new Node(nextPos, newCost));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Reconstruct the path by walking backward from the target
-        List<Position> path = new ArrayList<>();
-        if (!cameFrom.containsKey(target) && !start.equals(target)) {
-            return path; // No valid path exists
-        }
-
-        Position current = target;
-        while (current != null && !current.equals(start)) {
-            path.add(0, current); // Add to the front of the list
-            current = cameFrom.get(current);
-        }
-        return path;
+        return pathfindingService.getPath(start, target, units);
     }
 
     public String[] getMapDefinition() { return mapDefinition; }
@@ -384,21 +168,39 @@ public class Game implements Observable {
     }
 
     public boolean purchaseUnit(String unitType, Position pos) {
+        Building building = buildings.get(pos);
+
+        if (building == null) {
+            return false;
+        }
+
+        if (!"Továrna".equals(building.getType())) {
+            return false;
+        }
+
+        if (!building.getOwner().equals(currentPlayer)) {
+            return false;
+        }
+
+        if (units.get(pos) != null) {
+            return false;
+        }
+
         int cost = getUnitCost(unitType);
         int currentFunds = playerFunds.getOrDefault(currentPlayer, 0);
 
-        if (currentFunds >= cost) {
-            playerFunds.put(currentPlayer, currentFunds - cost);
-            
-            Unit newUnit = unitFactory.createUnit(unitType, currentPlayer, pos); 
-            
-            newUnit.setMoved(true); 
-            units.put(pos, newUnit);
-            
-            notifyObservers();
-            return true;
+        if (currentFunds < cost) {
+            return false;
         }
-        return false;
+
+        playerFunds.put(currentPlayer, currentFunds - cost);
+
+        Unit newUnit = unitFactory.createUnit(unitType, currentPlayer, pos);
+        newUnit.setMoved(true);
+        units.put(pos, newUnit);
+
+        notifyObservers();
+        return true;
     }
 
     public boolean purchaseUnit(UnitType type, Position pos) {
@@ -442,42 +244,7 @@ public class Game implements Observable {
     }
 
     public void processIncomeAndRepair(String player) {
-        int currentFunds = playerFunds.getOrDefault(player, 0);
-
-        // Calculate Income (1000 per owned building)
-        for (Building b : buildings.values()) {
-            if (b.getOwner().equals(player)) {
-                if (b.getType().equals("Město")) {
-                    currentFunds += 1000;
-                }
-            }
-        }
-
-        // Process Repairs (Units on friendly buildings)
-        for (Building b : buildings.values()) {
-            if (b.getOwner().equals(player)) {
-                Unit u = units.get(b.getPosition());
-                
-                // If a friendly unit is here and damaged
-                if (u != null && u.getPlayer().equals(player) && u.getHp() < 100) {
-                    int missingHp = 100 - u.getHp();
-                    int hpToHeal = Math.min(20, missingHp); // Max 20 HP per turn
-                    
-                    // 10% of base cost per 10 HP -> 1% of base cost per 1 HP
-                    int costPerHp = u.getBaseCost() / 100;
-                    int repairCost = hpToHeal * costPerHp;
-
-                    // If a player doesn't have money unit won't be repaired
-                    if (currentFunds >= repairCost) {
-                        currentFunds -= repairCost;
-                        u.heal(hpToHeal);
-                    }
-                }
-            }
-        }
-
-        // Save the updated treasury back to the engine
-        playerFunds.put(player, currentFunds);
+        economyService.processIncomeAndRepair(player, playerFunds, buildings, units);
     }
 
     public void addBuilding(Building building) {
