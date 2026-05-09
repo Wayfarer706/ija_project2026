@@ -3,17 +3,18 @@ package xyuguyn00.handler;
 import xyuguyn00.dto.GameActionDto;
 import xyuguyn00.dto.GameActionType;
 import xyuguyn00.game.Game;
-import xyuguyn00.game.Unit;
+import xyuguyn00.service.ActionValidationService;
 import xyuguyn00.common.Result;
 import xyuguyn00.common.GameActionHandler;
 import xyuguyn00.common.Position;
-import xyuguyn00.common.UnitType;
 
 public class AttackActionHandler implements GameActionHandler {
     private final Game game;
+    private final ActionValidationService validationService;
 
-    public AttackActionHandler(Game game) {
+    public AttackActionHandler(Game game, ActionValidationService validationService) {
         this.game = game;
+        this.validationService = validationService;
     }
 
     @Override
@@ -27,18 +28,10 @@ public class AttackActionHandler implements GameActionHandler {
         Position to = action.getTo();
         Position target = action.getTarget();
 
-        if (from == null || to == null || target == null) {
-            return Result.failure("Attack action requires from, to and target positions.");
-        }
+        Result result = validationService.canMoveAndAttack(from, to, target);
 
-        Unit attacker = game.getUnitAt(from);
-
-        if (attacker == null) {
-            return Result.failure("No attacking unit found at source position.");
-        }
-
-        if (attacker.getUnitType() == UnitType.ARTILLERY && !from.equals(to)) {
-            return Result.failure("Artillery cannot move and attack in the same turn.");
+        if (result.isFailure()) {
+            return result;
         }
 
         boolean moved = game.moveUnit(from, to);

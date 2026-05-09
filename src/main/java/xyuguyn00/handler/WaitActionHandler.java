@@ -3,15 +3,18 @@ package xyuguyn00.handler;
 import xyuguyn00.dto.GameActionDto;
 import xyuguyn00.dto.GameActionType;
 import xyuguyn00.game.Game;
+import xyuguyn00.service.ActionValidationService;
 import xyuguyn00.common.Result;
 import xyuguyn00.common.GameActionHandler;
 import xyuguyn00.common.Position;
 
 public class WaitActionHandler implements GameActionHandler {
     private final Game game;
+    private final ActionValidationService validationService;
 
-    public WaitActionHandler(Game game) {
+    public WaitActionHandler(Game game, ActionValidationService validationService) {
         this.game = game;
+        this.validationService = validationService;
     }
 
     @Override
@@ -24,8 +27,10 @@ public class WaitActionHandler implements GameActionHandler {
         Position from = action.getFrom();
         Position to = action.getTo();
 
-        if (from == null || to == null) {
-            return Result.failure("Wait action requires from and to positions.");
+        Result result = validationService.canMove(from, to);
+
+        if (result.isFailure()) {
+            return result;
         }
 
         boolean moved = game.moveUnit(from, to);

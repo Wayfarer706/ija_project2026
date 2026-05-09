@@ -3,6 +3,7 @@ package xyuguyn00.handler;
 import xyuguyn00.dto.GameActionDto;
 import xyuguyn00.dto.GameActionType;
 import xyuguyn00.game.Game;
+import xyuguyn00.service.ActionValidationService;
 import xyuguyn00.common.Result;
 import xyuguyn00.common.UnitType;
 import xyuguyn00.common.GameActionHandler;
@@ -10,9 +11,11 @@ import xyuguyn00.common.Position;
 
 public class PurchaseActionHandler implements GameActionHandler {
     private final Game game;
+    private final ActionValidationService validationService;
 
-    public PurchaseActionHandler(Game game) {
+    public PurchaseActionHandler(Game game, ActionValidationService validationService) {
         this.game = game;
+        this.validationService = validationService;
     }
 
     @Override
@@ -25,8 +28,10 @@ public class PurchaseActionHandler implements GameActionHandler {
         UnitType unitType = action.getUnitType();
         Position position = action.getTo();
 
-        if (position == null || unitType == null) {
-            return Result.failure("Purchase action requires unit type and target position");
+        Result result = validationService.canPurchase(unitType, position);
+
+        if (result.isFailure()) {
+            return result;
         }
 
         boolean purchased = game.purchaseUnit(unitType, position);

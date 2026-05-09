@@ -6,6 +6,7 @@ import xyuguyn00.common.GameActionHandler;
 import xyuguyn00.common.Result;
 import xyuguyn00.dto.GameActionDto;
 import xyuguyn00.game.Game;
+import xyuguyn00.service.ActionValidationService;
 
 import java.util.ArrayList;
 
@@ -21,12 +22,14 @@ public class GameActionDispatcher {
     }
 
     public static GameActionDispatcher createDefault(Game game) {
+        ActionValidationService validationService = new ActionValidationService(game);
+
         return new GameActionDispatcher(List.of(
-            new MoveActionHandler(game),
-            new WaitActionHandler(game),
-            new AttackActionHandler(game),
-            new CaptureActionHandler(game),
-            new PurchaseActionHandler(game)
+            new MoveActionHandler(game, validationService),
+            new WaitActionHandler(game, validationService),
+            new AttackActionHandler(game, validationService),
+            new CaptureActionHandler(game, validationService),
+            new PurchaseActionHandler(game, validationService)
         ));
     }
 

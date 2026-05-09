@@ -6,12 +6,15 @@ import xyuguyn00.game.Game;
 import xyuguyn00.common.Result;
 import xyuguyn00.common.GameActionHandler;
 import xyuguyn00.common.Position;
+import xyuguyn00.service.ActionValidationService;
 
 public class MoveActionHandler implements GameActionHandler {
     private final Game game;
+    private final ActionValidationService validationService;
 
-    public MoveActionHandler(Game game) {
+    public MoveActionHandler(Game game, ActionValidationService validationService) {
         this.game = game;
+        this.validationService = validationService;
     }
 
     @Override
@@ -24,8 +27,10 @@ public class MoveActionHandler implements GameActionHandler {
         Position from = action.getFrom();
         Position to = action.getTo();
 
-        if (from == null || to == null) {
-            return Result.failure("Move action requires from and to positions.");
+        Result result = validationService.canMove(from, to);
+
+        if (result.isFailure()) {
+            return result;
         }
 
         boolean moved = game.moveUnit(from, to);
