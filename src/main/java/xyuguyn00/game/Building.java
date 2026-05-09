@@ -18,12 +18,25 @@ public class Building {
         this.capturePoints = 20; // All buildings require 20 points to capture
     }
 
-    public Position getPosition() { return position; }
-    public String getType() { return type; }
-    public String getOwner() { return owner; }
-    public void setOwner(String owner) { this.owner = owner; }
+    public Position getPosition() { 
+        return position; 
+    }
+
+    public String getType() { 
+        return type; 
+    }
+
+    public String getOwner() { 
+        return owner; 
+    }
     
-    public int getCapturePoints() { return capturePoints; }
+    public void setOwner(String owner) { 
+        this.owner = owner; 
+    }
+    
+    public int getCapturePoints() { 
+        return capturePoints; 
+    }
     
     public void reduceCapturePoints(int amount) {
         this.capturePoints -= amount;

@@ -23,19 +23,57 @@ public class Unit {
         this.hp = 100; 
     }
 
-    public Position getPosition() { return position; }
-    public void setPosition(Position position) { this.position = position; }
-    public String getType() { return data.unitName(); }
-    public String getPlayer() { return player; }
-    public int getHp() { return hp; }
-    public int getMaxMove() { return data.movementRange(); }
-    public String getMovementType() { return data.movementType(); }
-    public int getMinAttackRange() { return data.minAttackRange(); }
-    public int getMaxAttackRange() { return data.maxAttackRange(); }
-    public int getBaseCost() { return data.cost(); }
-    public boolean hasMoved() { return hasMoved; }
-    public void setMoved(boolean moved) { this.hasMoved = moved; }
-    public boolean isDead() { return hp <= 0; }
+    public Position getPosition() { 
+        return position; 
+    }
+
+    public void setPosition(Position position) { 
+        this.position = position; 
+    }
+
+    public String getType() { 
+        return data.unitName(); 
+    }
+
+    public String getPlayer() { 
+        return player; 
+    }
+
+    public int getHp() { 
+        return hp; 
+    }
+
+    public int getMaxMove() { 
+        return data.movementRange(); 
+    }
+
+    public String getMovementType() { 
+        return data.movementType(); 
+    }
+
+    public int getMinAttackRange() { 
+        return data.minAttackRange(); 
+    }
+
+    public int getMaxAttackRange() { 
+        return data.maxAttackRange(); 
+    }
+
+    public int getBaseCost() { 
+        return data.cost(); 
+    }
+
+    public boolean hasMoved() { 
+        return hasMoved; 
+    }
+
+    public void setMoved(boolean moved) { 
+        this.hasMoved = moved; 
+    }
+
+    public boolean isDead() { 
+        return hp <= 0; 
+    }
 
     public void takeDamage(int points) {
         this.hp -= points;

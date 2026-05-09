@@ -20,14 +20,19 @@ public class UnitFactory {
      */
     public Unit createUnit(String unitName, String player, Position position) {
         UnitData data = unitRules.get(unitName);
+
         if (data == null) {
             throw new IllegalArgumentException("Cannot create unknown unit type: " + unitName);
         }
+
         return new Unit(data, player, position);
     }
 
     public int getUnitCost(String type) {
-        if (!unitRules.containsKey(type)) return 9999;
+        if (!unitRules.containsKey(type)) {
+            return 9999;
+        }
+        
         return unitRules.get(type).cost();
     }
 }

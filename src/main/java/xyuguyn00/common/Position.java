@@ -16,8 +16,13 @@ public class Position {
         this.y = y;
     }
 
-    public int getX() { return x; }
-    public int getY() { return y; }
+    public int getX() { 
+        return x; 
+    }
+
+    public int getY() { 
+        return y; 
+    }
 
     // --- Standard Object Methods ---
     
@@ -26,8 +31,14 @@ public class Position {
 
     @Override
     public boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null || getClass() != object.getClass()) return false;
+        if (this == object) {
+            return true;
+        }
+
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        
         Position position = (Position) object;
         return x == position.x && y == position.y;
     }

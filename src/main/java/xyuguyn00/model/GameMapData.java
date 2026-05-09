@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Jackson POJOs for parsing game_stats.json
  */
-public record GameMapData(
+public record GameMapData (
     int width,
     int height,
     List<String> layout,

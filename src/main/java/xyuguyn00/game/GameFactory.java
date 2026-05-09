@@ -62,6 +62,7 @@ public class GameFactory {
         if (mapData.layout().size() != height) {
             throw new Exception("JSON Layout row count does not match the 'height' parameter.");
         }
+
         for (String row : mapData.layout()) {
             // Remove spaces before checking length to match how the engine parses it
             if (row.replace(" ", "").length() != width) {
@@ -71,6 +72,7 @@ public class GameFactory {
 
         // Buildings are within bounds, logical, and do not stack
         Set<String> occupiedBuildingTiles = new HashSet<>();
+
         for (GameMapData.BuildingInitData b : mapData.buildings()) {
             if (!validBuildings.contains(b.type())) {
                 throw new Exception("CRITICAL DATA ERROR: Invalid building type '" + b.type() + "'. Expected one of: " + validBuildings);
@@ -86,6 +88,7 @@ public class GameFactory {
             if (occupiedBuildingTiles.contains(coordKey)) {
                 throw new Exception("CRITICAL DATA ERROR: Multiple buildings placed on the same tile at coordinates (" + b.x() + ", " + b.y() + ")!");
             }
+
             occupiedBuildingTiles.add(coordKey);
 
             char terrainChar = mapData.layout().get(b.y()).replace(" ", "").charAt(b.x());
@@ -96,10 +99,12 @@ public class GameFactory {
 
         // Units are within bounds, do not stack, and follow terrain rules
         Set<String> occupiedUnitTiles = new HashSet<>();
+
         for (GameMapData.UnitInitData u : mapData.units()) {
             if (!validUnits.contains(u.type())) {
                 throw new Exception("CRITICAL DATA ERROR: Invalid unit type '" + u.type() + "'. Expected one of: " + validUnits);
             }
+
             // Bounds Check
             if (u.x() < 0 || u.x() >= width || u.y() < 0 || u.y() >= height) {
                 throw new Exception("Unit '" + u.type() + "' is placed completely off the map at coordinates (" + u.x() + ", " + u.y() + ").");
@@ -110,6 +115,7 @@ public class GameFactory {
             if (occupiedUnitTiles.contains(coordKey)) {
                 throw new Exception("CRITICAL DATA ERROR: Multiple units placed on the same tile at coordinates (" + u.x() + ", " + u.y() + ")!");
             }
+
             occupiedUnitTiles.add(coordKey);
 
             // Terrain Passability Check
@@ -130,8 +136,11 @@ public class GameFactory {
 
         for (GameMapData.BuildingInitData b : mapData.buildings()) {
             if (b.type().equals("Velitelství")) {
-                if (b.owner().equals("Player 1")) p1HqCount++;
-                else if (b.owner().equals("Player 2")) p2HqCount++;
+                if (b.owner().equals("Player 1")) {
+                    p1HqCount++;
+                } else if (b.owner().equals("Player 2")) {
+                    p2HqCount++;
+                }
             }
         }
 
