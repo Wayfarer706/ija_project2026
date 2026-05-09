@@ -2,21 +2,20 @@ package xyuguyn00.view;
 
 import javafx.application.Platform;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
 import xyuguyn00.common.GameEvent;
 import xyuguyn00.common.Position;
+import xyuguyn00.common.Result;
+import xyuguyn00.dto.AvailableActionsDto;
+import xyuguyn00.dto.GameActionDto;
+import xyuguyn00.dto.GameActionType;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
+import xyuguyn00.handler.GameActionDispatcher;
+import xyuguyn00.service.ActionValidationService;
 import xyuguyn00.tool.GameObserver;
 
 import java.util.ArrayList;
@@ -25,6 +24,12 @@ import java.util.List;
 public class GameView extends GridPane implements GameObserver {
     private final Game game;
     private final int tileSize = 60; 
+
+    private final GameActionDispatcher dispatcher;
+    private final ActionValidationService validationService;
+    private final TileRenderer tileRenderer;
+    private final ActionMenuFactory actionMenuFactory;
+    private final FactoryMenuFactory factoryMenuFactory;
 
     // --- Interactivity State ---
     private Position selectedPosition = null;
@@ -44,6 +49,11 @@ public class GameView extends GridPane implements GameObserver {
         this.game = game;
         this.game.addObserver(this); 
         this.setStyle("-fx-alignment: center; -fx-padding: 20; -fx-background-color: #2F4F4F;");
+        this.dispatcher = GameActionDispatcher.createDefault(game);
+        this.validationService = new ActionValidationService(game);
+        this.tileRenderer = new TileRenderer(tileSize);
+        this.actionMenuFactory = new ActionMenuFactory();
+        this.factoryMenuFactory = new FactoryMenuFactory();
         render();
     }
 
@@ -54,11 +64,14 @@ public class GameView extends GridPane implements GameObserver {
                 Position moveTo = previewPosition;
                 Position target = clickedPos;
 
-                // Commit the move, then strike using the cached variables
-                game.moveUnit(moveFrom, moveTo); 
-                game.attack(moveTo, target); 
-                
-                clearSelection(); 
+                dispatchAction(
+                    GameActionDto.builder(GameActionType.ATTACK)
+                        .from(moveFrom)
+                        .to(moveTo)
+                        .target(target)
+                        .build()
+                );
+
             } else {
                 // User clicked somewhere else. Cancel targeting and reopen the menu.
                 isTargeting = false;
@@ -96,88 +109,86 @@ public class GameView extends GridPane implements GameObserver {
     }
 
     private void showActionMenu(Position targetPos, double screenX, double screenY) {
-        activeMenu = new ContextMenu();
-        activeMenu.setStyle("-fx-base: #3c3c3c; -fx-font-size: 14px; -fx-font-weight: bold;");
-
-        // --- CALCULATE VALID COMBAT TARGETS ---
         validTargets.clear();
-        Unit attacker = game.getUnitAt(selectedPosition);
-        
-        // Artillery cannot move and attack in the same turn.
-        boolean canAttack = true;
-        if (attacker.getType().equals("Dělostřelectvo") && !selectedPosition.equals(previewPosition)) {
-            canAttack = false; 
-        }
 
-        if (canAttack) {
-            for (int r = 0; r < game.getHeight(); r++) {
-                for (int c = 0; c < game.getWidth(); c++) {
-                    Position p = new Position(r, c);
-                    Unit targetUnit = game.getUnitAt(p);
-                    
-                    // Check if there is an enemy at this coordinate
-                    if (targetUnit != null && !targetUnit.getPlayer().equals(attacker.getPlayer())) {
-                        // Calculate Manhattan distance from the PREVIEW position, not the start position!
-                        int distance = Math.abs(previewPosition.getX() - p.getX()) + 
-                                       Math.abs(previewPosition.getY() - p.getY());
-                                       
-                        if (distance >= attacker.getMinAttackRange() && distance <= attacker.getMaxAttackRange()) {
-                            validTargets.add(p);
-                        }
-                    }
-                }
-            }
-        }
+        AvailableActionsDto actions = validationService.getAvailableActions(selectedPosition, targetPos);
+        validTargets.addAll(actions.getAttackTargets());
 
-        // --- DYNAMIC MENU OPTIONS ---
+        Building targetBuilding = game.getBuildingAt(targetPos);
 
-        if (!validTargets.isEmpty()) {
-            MenuItem attackItem = new MenuItem("Attack");
-            attackItem.setOnAction(e -> {
-                if (activeMenu != null) activeMenu.setOnHidden(null);
-                activeMenu.hide();
-                isTargeting = true; // Enter targeting mode!
-                render();
-            });
-            activeMenu.getItems().add(attackItem);
-        }
-
-        Building targetBuilding = game.getBuildingAt(previewPosition);
-        if (targetBuilding != null && attacker.getType().equals("Pěchota") && !targetBuilding.getOwner().equals(attacker.getPlayer())) {
-            MenuItem captureItem = new MenuItem("Capture (" + targetBuilding.getCapturePoints() + " CP)");
-            captureItem.setOnAction(e -> {
-                Position moveFrom = selectedPosition;
-                Position moveTo = previewPosition;
-
-                if (activeMenu != null) activeMenu.setOnHidden(null);
-                activeMenu.hide();
-                
-                game.moveUnit(moveFrom, moveTo);
-                game.captureBuilding(moveTo);
-                clearSelection();
-            });
-            activeMenu.getItems().add(captureItem);
-        }
-
-        MenuItem waitItem = new MenuItem("Wait");
-        waitItem.setOnAction(e -> {
-            Position from = selectedPosition;
-            Position to = previewPosition;
-            
-            if (activeMenu != null) activeMenu.setOnHidden(null); 
-            clearSelection(); 
-            
-            if (from != null && to != null) {
-                game.moveUnit(from, to); 
-            }
-        });
-
-        MenuItem cancelItem = new MenuItem("Cancel");
-        cancelItem.setOnAction(e -> clearSelection());
+        activeMenu = actionMenuFactory.createActionMenu(
+                actions,
+                targetBuilding,
+                this::enterTargetingMode,
+                () -> performCapture(targetPos),
+                () -> performWait(targetPos),
+                this::clearSelection
+        );
 
         activeMenu.setOnHidden(e -> clearSelection());
-        activeMenu.getItems().addAll(waitItem, cancelItem);
         activeMenu.show(this, screenX, screenY);
+    }
+
+    private void enterTargetingMode() {
+        if (activeMenu != null) {
+            activeMenu.setOnHidden(null);
+            activeMenu.hide();
+        }
+
+        isTargeting = true;
+        render();
+    }
+
+    private void performCapture(Position targetPos) {
+        Position moveFrom = selectedPosition;
+        Position moveTo = targetPos;
+
+        hideActiveMenuWithoutClearing();
+
+        dispatchAction(
+                GameActionDto.builder(GameActionType.CAPTURE)
+                        .from(moveFrom)
+                        .to(moveTo)
+                        .build()
+        );
+    }
+
+    private void performWait(Position targetPos) {
+        Position from = selectedPosition;
+        Position to = targetPos;
+
+        hideActiveMenuWithoutClearing();
+
+        if (from != null && to != null) {
+            dispatchAction(
+                    GameActionDto.builder(GameActionType.WAIT)
+                            .from(from)
+                            .to(to)
+                            .build()
+            );
+        } else {
+            clearSelection();
+        }
+    }
+
+    private void hideActiveMenuWithoutClearing() {
+        if (activeMenu != null) {
+            activeMenu.setOnHidden(null);
+            activeMenu.hide();
+        }
+    }
+
+    private boolean dispatchAction(GameActionDto action) {
+        Result result = dispatcher.dispatch(action);
+
+        if (result.isFailure()) {
+            System.out.println("Action failed: " + result.getMessage());
+            clearSelection();
+            return false;
+        }
+
+        clearSelection();
+        return true;
     }
 
     private void clearSelection() {
@@ -207,200 +218,148 @@ public class GameView extends GridPane implements GameObserver {
 
             for (int row = 0; row < game.getHeight(); row++) {
                 String rowStr = map[row].replace(" ", "");
+
                 for (int col = 0; col < game.getWidth(); col++) {
+                    Position pos = new Position(row, col);
                     char terrainChar = rowStr.charAt(col);
-                    Position pos = new Position(row, col); 
 
-                    StackPane tile = new StackPane();
-                    tile.setOnMouseClicked(e -> { 
-                        Position clickedPos = pos;
-                        Unit clickedUnit = game.getUnitAt(clickedPos);
-
-                        if (selectedPosition == null) {
-                            if (clickedUnit != null && clickedUnit.getPlayer().equals(game.getCurrentPlayer()) && !clickedUnit.hasMoved()) {
-                                selectedPosition = clickedPos;
-                                
-                                reachablePositions = game.getReachableTiles(clickedPos); 
-                                
-                                render(); 
-                            } else if (clickedUnit == null) {
-                                Building b = game.getBuildingAt(clickedPos);
-                                if (b != null && b.getType().equals("Továrna") && b.getOwner().equals(game.getCurrentPlayer())) {
-                                    showFactoryMenu(clickedPos, tile, e.getScreenX(), e.getScreenY());
-                                } else {
-                                    clearSelection();
-                                }
-                            }
-                        } else {
-                            handleTileClick(pos, e);
-                        }
-                    });
-
-                    // Track mouse hover for path drawing
-                    tile.setOnMouseEntered(e -> {
-                        // Only draw paths if a unit is selected, but hasn't finalized a move yet
-                        if (selectedPosition != null && previewPosition == null) {
-                            if (reachablePositions.contains(pos)) {
-                                if (!pos.equals(hoveredPosition)) {
-                                    hoveredPosition = pos;
-                                    currentPath = game.getPath(selectedPosition, pos);
-                                    render(); // Re-render to show the breadcrumbs
-                                }
-                            } else if (hoveredPosition != null) {
-                                // Mouse left the valid movement area, clear the path
-                                hoveredPosition = null;
-                                currentPath.clear();
-                                render();
-                            }
-                        }
-                    });
-
-                    // Background
-                    Rectangle bg = new Rectangle(tileSize, tileSize);
-                    bg.setFill(getTerrainColor(terrainChar));
-                    bg.setStroke(Color.BLACK); 
-                    bg.setStrokeWidth(0.5);
-                    tile.getChildren().add(bg);
-                
-                    Building building = game.getBuildingAt(pos);
-                    if (building != null) {
-                        Rectangle bldgOverlay = new Rectangle(tileSize - 12, tileSize - 12);
-                        bldgOverlay.setFill(Color.TRANSPARENT);
-                        bldgOverlay.setStrokeWidth(4);
-                        
-                        if (building.getOwner().equals("Player 1")) bldgOverlay.setStroke(Color.DARKBLUE);
-                        else if (building.getOwner().equals("Player 2")) bldgOverlay.setStroke(Color.DARKRED);
-                        else bldgOverlay.setStroke(Color.WHITE); // Neutral
-                        
-                        tile.getChildren().add(bldgOverlay);
-                    }
-
-                    // Highlights
-                    if (isTargeting && validTargets.contains(pos)) {
-                        // Draw red targeting crosshair overlay
-                        Rectangle crosshair = new Rectangle(tileSize, tileSize);
-                        crosshair.setFill(Color.rgb(255, 0, 0, 0.4)); 
-                        crosshair.setStroke(Color.RED);
-                        crosshair.setStrokeWidth(3);
-                        tile.getChildren().add(crosshair);
-                    } else if (pos.equals(selectedPosition) && previewPosition == null) {
-                        Rectangle highlight = new Rectangle(tileSize, tileSize);
-                        highlight.setFill(Color.rgb(255, 255, 0, 0.4)); 
-                        tile.getChildren().add(highlight);
-                    } else if (reachablePositions.contains(pos) && previewPosition == null) {
-                        Rectangle pathTarget = new Rectangle(tileSize, tileSize);
-                        pathTarget.setFill(Color.rgb(255, 255, 255, 0.5)); 
-                        pathTarget.setStroke(Color.WHITE);
-                        pathTarget.setStrokeWidth(2);
-                        tile.getChildren().add(pathTarget);
-                    } else if (reachablePositions.contains(pos) && previewPosition == null) {
-                        Rectangle pathTarget = new Rectangle(tileSize, tileSize);
-                        pathTarget.setFill(Color.rgb(255, 255, 255, 0.5)); 
-                        pathTarget.setStroke(Color.WHITE);
-                        pathTarget.setStrokeWidth(2);
-                        tile.getChildren().add(pathTarget);
-                    }
-
-                    // Draw breadcrumb dots for the movement path
-                    if (currentPath.contains(pos)) {
-                        Circle pathDot = new Circle(tileSize / 8.0); 
-                        pathDot.setFill(Color.WHITE);
-                        pathDot.setOpacity(0.8);
-                        tile.getChildren().add(pathDot);
-                    }
-
-                    // Unit Rendering (with preview logic)
-                    Unit unit = game.getUnitAt(pos);
-                    if (previewPosition != null) {
-                        if (pos.equals(previewPosition)) {
-                            unit = game.getUnitAt(selectedPosition); 
-                        } else if (pos.equals(selectedPosition)) {
-                            unit = null; 
-                        }
-                    }
-
-                    if (unit != null) {
-                        Circle token = new Circle(tileSize / 2.5);
-                        token.setFill(unit.getPlayer().equals("Player 1") ? Color.DARKBLUE : Color.DARKRED);
-                        token.setStroke(Color.WHITE);
-                        token.setStrokeWidth(2);
-
-                        Text label = new Text(unit.getType().substring(0, 1));
-                        label.setFill(Color.WHITE);
-                        label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-                        
-                        Text hpLabel = new Text(unit.getHp() + " HP");
-                        hpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
-                        hpLabel.setTranslateY(18); 
-                        
-                        if (unit.getHp() > 50) hpLabel.setFill(Color.LIGHTGREEN);
-                        else if (unit.getHp() > 20) hpLabel.setFill(Color.YELLOW);
-                        else hpLabel.setFill(Color.RED);
-
-                        Building b = game.getBuildingAt(pos);
-                        if (b != null && b.getCapturePoints() < 20) {
-                            Text cpLabel = new Text("CP: " + b.getCapturePoints());
-                            cpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 11));
-                            cpLabel.setFill(Color.CYAN);
-                            cpLabel.setTranslateY(-22); // Place it above the unit icon
-                            tile.getChildren().add(cpLabel);
-                        }
-
-                        if (unit.hasMoved()) {
-                            token.setOpacity(0.4); 
-                            label.setOpacity(0.4);
-                            hpLabel.setOpacity(0.4);
-                        }
-                        
-                        tile.getChildren().addAll(token, label, hpLabel);
-                    }
-
-                    this.add(tile, col, row); 
+                    StackPane tile = createTile(pos, terrainChar);
+                    this.add(tile, col, row);
                 }
             }
         });
     }
 
-    private void showFactoryMenu(Position pos, javafx.scene.Node tile, double screenX, double screenY) {
-        javafx.scene.control.ContextMenu shopMenu = new javafx.scene.control.ContextMenu();
+    private StackPane createTile(Position pos, char terrainChar) {
+        StackPane tile = new StackPane();
 
-        // The units available to build
-        String[] buildableUnits = {"Pěchota", "Tank", "Dělostřelectvo"};
+        setupTileMouseHandlers(tile, pos);
 
-        for (String type : buildableUnits) {
-            int cost = game.getUnitCost(type);
-            javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(type + " (" + cost + " G)");
-            
-            // Disable the button if the player doesn't have enough gold
-            if (game.getPlayerFunds(game.getCurrentPlayer()) < cost) {
-                item.setDisable(true);
-            }
-            
-            item.setOnAction(event -> {
-                game.purchaseUnit(type, pos);
-                shopMenu.hide();
-            });
-            shopMenu.getItems().add(item);
-        }
+        tile.getChildren().add(tileRenderer.createTerrainBackground(terrainChar));
+        addBuildingOverlay(tile, pos);
+        addHighlights(tile, pos);
+        addPathDot(tile, pos);
+        addUnit(tile, pos);
 
-        javafx.scene.control.MenuItem cancelItem = new javafx.scene.control.MenuItem("Zrušit");
-        cancelItem.setOnAction(event -> shopMenu.hide());
-        shopMenu.getItems().add(cancelItem);
-
-        shopMenu.show(tile, screenX, screenY);
+        return tile;
     }
 
-    private Color getTerrainColor(char t) {
-        return switch (t) {
-            case 'P' -> Color.web("#90EE90");
-            case 'F' -> Color.web("#228B22");
-            case 'M' -> Color.web("#808080");
-            case 'W' -> Color.web("#4169E1");
-            case 'C' -> Color.web("#D3D3D3");
-            case 'T' -> Color.web("#CD853F");
-            case 'H' -> Color.web("#FFD700");
-            default -> Color.WHITE;
-        };
+    private void setupTileMouseHandlers(StackPane tile, Position pos) {
+        tile.setOnMouseClicked(e -> {
+            if (shouldOpenFactoryMenu(pos)) {
+                showFactoryMenu(pos, tile, e.getScreenX(), e.getScreenY());
+                return;
+            }
+
+            handleTileClick(pos, e);
+        });
+
+        tile.setOnMouseEntered(e -> updateHoveredPath(pos));
+    }
+
+    private boolean shouldOpenFactoryMenu(Position pos) {
+        if (selectedPosition != null) {
+            return false;
+        }
+
+        Unit clickedUnit = game.getUnitAt(pos);
+        if (clickedUnit != null) {
+            return false;
+        }
+
+        Building building = game.getBuildingAt(pos);
+
+        return building != null
+                && building.getType().equals("Továrna")
+                && building.getOwner().equals(game.getCurrentPlayer());
+    }
+
+    private void updateHoveredPath(Position pos) {
+        if (selectedPosition == null || previewPosition != null) {
+            return;
+        }
+
+        if (reachablePositions.contains(pos)) {
+            if (!pos.equals(hoveredPosition)) {
+                hoveredPosition = pos;
+                currentPath = game.getPath(selectedPosition, pos);
+                render();
+            }
+            return;
+        }
+
+        if (hoveredPosition != null) {
+            hoveredPosition = null;
+            currentPath.clear();
+            render();
+        }
+    }
+
+    private void addBuildingOverlay(StackPane tile, Position pos) {
+        Building building = game.getBuildingAt(pos);
+
+        if (building != null) {
+            tile.getChildren().add(tileRenderer.createBuildingOverlay(building));
+        }
+    }
+
+    private void addHighlights(StackPane tile, Position pos) {
+        if (isTargeting && validTargets.contains(pos)) {
+            tile.getChildren().add(tileRenderer.createTargetingHighlight());
+        } else if (pos.equals(selectedPosition) && previewPosition == null) {
+            tile.getChildren().add(tileRenderer.createSelectedHighlight());
+        } else if (reachablePositions.contains(pos) && previewPosition == null) {
+            tile.getChildren().add(tileRenderer.createReachableHighlight());
+        }
+    }
+
+    private void addPathDot(StackPane tile, Position pos) {
+        if (currentPath.contains(pos)) {
+            tile.getChildren().add(tileRenderer.createPathDot());
+        }
+    }
+
+    private void addUnit(StackPane tile, Position pos) {
+        Unit unit = getPreviewAwareUnit(pos);
+
+        if (unit != null) {
+            Building buildingOnTile = game.getBuildingAt(pos);
+            tile.getChildren().addAll(tileRenderer.createUnitNodes(unit, buildingOnTile));
+        }
+    }
+
+    private Unit getPreviewAwareUnit(Position pos) {
+        Unit unit = game.getUnitAt(pos);
+
+        if (previewPosition == null) {
+            return unit;
+        }
+
+        if (pos.equals(previewPosition)) {
+            return game.getUnitAt(selectedPosition);
+        }
+
+        if (pos.equals(selectedPosition)) {
+            return null;
+        }
+
+        return unit;
+    }
+
+    private void showFactoryMenu(Position pos, javafx.scene.Node tile, double screenX, double screenY) {
+        ContextMenu shopMenu = factoryMenuFactory.createFactoryMenu(
+                game::getUnitCost,
+                type -> game.getPlayerFunds(game.getCurrentPlayer()) < game.getUnitCost(type)
+                        || game.getUnitAt(pos) != null,
+                type -> dispatchAction(
+                        GameActionDto.builder(GameActionType.PURCHASE)
+                                .to(pos)
+                                .unitType(type)
+                                .build()
+                )
+        );
+
+        shopMenu.show(tile, screenX, screenY);
     }
 
     @Override
