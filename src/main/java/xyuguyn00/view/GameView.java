@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.StackPane;
 import xyuguyn00.common.GameEvent;
 import xyuguyn00.common.Position;
 import xyuguyn00.common.Result;
@@ -28,6 +27,7 @@ public class GameView extends GridPane implements GameObserver {
     private final GameActionDispatcher dispatcher;
     private final ActionValidationService validationService;
     private final TileRenderer tileRenderer;
+    private final GameBoardView boardView;
     private final ActionMenuFactory actionMenuFactory;
     private final FactoryMenuFactory factoryMenuFactory;
 
@@ -52,8 +52,16 @@ public class GameView extends GridPane implements GameObserver {
         this.dispatcher = GameActionDispatcher.createDefault(game);
         this.validationService = new ActionValidationService(game);
         this.tileRenderer = new TileRenderer(tileSize);
+        this.boardView = new GameBoardView(game, tileRenderer);
         this.actionMenuFactory = new ActionMenuFactory();
         this.factoryMenuFactory = new FactoryMenuFactory();
+
+        this.boardView.setOnTileClicked(this::handleTileClick);
+        this.boardView.setOnTileHovered(this::updateHoveredPath);
+        this.boardView.setOnFactoryMenuRequested(this::showFactoryMenu);
+
+        this.add(boardView, 0, 0);
+
         render();
     }
 
@@ -212,66 +220,18 @@ public class GameView extends GridPane implements GameObserver {
     }
 
     private void render() {
-        Platform.runLater(() -> {
-            this.getChildren().clear();
-            String[] map = game.getMapDefinition();
-
-            for (int row = 0; row < game.getHeight(); row++) {
-                String rowStr = map[row].replace(" ", "");
-
-                for (int col = 0; col < game.getWidth(); col++) {
-                    Position pos = new Position(row, col);
-                    char terrainChar = rowStr.charAt(col);
-
-                    StackPane tile = createTile(pos, terrainChar);
-                    this.add(tile, col, row);
-                }
-            }
-        });
+        Platform.runLater(() -> boardView.render(createBoardViewState()));
     }
 
-    private StackPane createTile(Position pos, char terrainChar) {
-        StackPane tile = new StackPane();
-
-        setupTileMouseHandlers(tile, pos);
-
-        tile.getChildren().add(tileRenderer.createTerrainBackground(terrainChar));
-        addBuildingOverlay(tile, pos);
-        addHighlights(tile, pos);
-        addPathDot(tile, pos);
-        addUnit(tile, pos);
-
-        return tile;
-    }
-
-    private void setupTileMouseHandlers(StackPane tile, Position pos) {
-        tile.setOnMouseClicked(e -> {
-            if (shouldOpenFactoryMenu(pos)) {
-                showFactoryMenu(pos, tile, e.getScreenX(), e.getScreenY());
-                return;
-            }
-
-            handleTileClick(pos, e);
-        });
-
-        tile.setOnMouseEntered(e -> updateHoveredPath(pos));
-    }
-
-    private boolean shouldOpenFactoryMenu(Position pos) {
-        if (selectedPosition != null) {
-            return false;
-        }
-
-        Unit clickedUnit = game.getUnitAt(pos);
-        if (clickedUnit != null) {
-            return false;
-        }
-
-        Building building = game.getBuildingAt(pos);
-
-        return building != null
-                && building.getType().equals("Továrna")
-                && building.getOwner().equals(game.getCurrentPlayer());
+    private BoardViewState createBoardViewState() {
+        return new BoardViewState(
+                selectedPosition,
+                previewPosition,
+                new ArrayList<>(reachablePositions),
+                new ArrayList<>(currentPath),
+                isTargeting,
+                new ArrayList<>(validTargets)
+        );
     }
 
     private void updateHoveredPath(Position pos) {
@@ -293,57 +253,6 @@ public class GameView extends GridPane implements GameObserver {
             currentPath.clear();
             render();
         }
-    }
-
-    private void addBuildingOverlay(StackPane tile, Position pos) {
-        Building building = game.getBuildingAt(pos);
-
-        if (building != null) {
-            tile.getChildren().add(tileRenderer.createBuildingOverlay(building));
-        }
-    }
-
-    private void addHighlights(StackPane tile, Position pos) {
-        if (isTargeting && validTargets.contains(pos)) {
-            tile.getChildren().add(tileRenderer.createTargetingHighlight());
-        } else if (pos.equals(selectedPosition) && previewPosition == null) {
-            tile.getChildren().add(tileRenderer.createSelectedHighlight());
-        } else if (reachablePositions.contains(pos) && previewPosition == null) {
-            tile.getChildren().add(tileRenderer.createReachableHighlight());
-        }
-    }
-
-    private void addPathDot(StackPane tile, Position pos) {
-        if (currentPath.contains(pos)) {
-            tile.getChildren().add(tileRenderer.createPathDot());
-        }
-    }
-
-    private void addUnit(StackPane tile, Position pos) {
-        Unit unit = getPreviewAwareUnit(pos);
-
-        if (unit != null) {
-            Building buildingOnTile = game.getBuildingAt(pos);
-            tile.getChildren().addAll(tileRenderer.createUnitNodes(unit, buildingOnTile));
-        }
-    }
-
-    private Unit getPreviewAwareUnit(Position pos) {
-        Unit unit = game.getUnitAt(pos);
-
-        if (previewPosition == null) {
-            return unit;
-        }
-
-        if (pos.equals(previewPosition)) {
-            return game.getUnitAt(selectedPosition);
-        }
-
-        if (pos.equals(selectedPosition)) {
-            return null;
-        }
-
-        return unit;
     }
 
     private void showFactoryMenu(Position pos, javafx.scene.Node tile, double screenX, double screenY) {
