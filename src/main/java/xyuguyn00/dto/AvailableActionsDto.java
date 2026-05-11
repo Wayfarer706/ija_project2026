@@ -17,10 +17,6 @@ public class AvailableActionsDto {
         this.attackTargets = new ArrayList<>(attackTargets);
     }
 
-    public boolean canWait() {
-        return canWait;
-    }
-
     public boolean canCapture() {
         return canCapture;
     }
