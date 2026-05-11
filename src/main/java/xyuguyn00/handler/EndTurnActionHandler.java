@@ -1,0 +1,26 @@
+package xyuguyn00.handler;
+
+import xyuguyn00.common.GameActionHandler;
+import xyuguyn00.common.Result;
+import xyuguyn00.dto.GameActionDto;
+import xyuguyn00.dto.GameActionType;
+import xyuguyn00.game.Game;
+
+public class EndTurnActionHandler implements GameActionHandler {
+    private final Game game;
+
+    public EndTurnActionHandler(Game game) {
+        this.game = game;
+    }
+
+    @Override
+    public boolean canHandle(GameActionDto action) {
+        return action != null && action.getType() == GameActionType.END_TURN;
+    }
+
+    @Override
+    public Result handle(GameActionDto action) {
+        game.endTurn();
+        return Result.success();
+    }
+}

@@ -5,5 +5,6 @@ public enum GameActionType {
     WAIT,
     ATTACK,
     CAPTURE,
-    PURCHASE
+    PURCHASE,
+    END_TURN
 }
