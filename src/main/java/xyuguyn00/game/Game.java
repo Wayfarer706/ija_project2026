@@ -10,6 +10,7 @@ import java.util.EnumMap;
 
 import xyuguyn00.common.Position;
 import xyuguyn00.common.enums.BuildingType;
+import xyuguyn00.common.enums.GameActionType;
 import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.common.enums.UnitType;
@@ -78,11 +79,14 @@ public class Game implements Observable {
     public void removeObserver(GameObserver observer) { observers.remove(observer); }
 
     @Override
-    public void notifyObservers() {
-        GameEvent event = new GameEvent();
+    public void notifyObservers(GameEvent event) {
         for (GameObserver observer : observers) {
             observer.update(event);
         }
+    }
+
+    public void fireGameEvent(GameActionType actionType, String message) {
+        notifyObservers(new GameEvent(actionType, message));
     }
 
     // --- Core Game Logic & Pathfinding ---
@@ -104,7 +108,6 @@ public class Game implements Observable {
             unit.setPosition(to);
             unit.setMoved(true);
             units.put(to, unit);
-            notifyObservers();
             return true;
         }
 
@@ -115,10 +118,6 @@ public class Game implements Observable {
 
     public boolean attack(Position attackerPos, Position defenderPos) {
         boolean attacked = combatService.attack(units, attackerPos, defenderPos);
-
-        if (attacked) {
-            notifyObservers();
-        }
 
         return attacked;
     }
@@ -149,7 +148,6 @@ public class Game implements Observable {
         }
 
         unit.setMoved(true); // Commits the turn
-        notifyObservers();
         return true;
     }
 
@@ -201,7 +199,6 @@ public class Game implements Observable {
         newUnit.setMoved(true);
         units.put(pos, newUnit);
 
-        notifyObservers();
         return true;
     }
 
@@ -237,8 +234,6 @@ public class Game implements Observable {
         }
 
         processIncomeAndRepair(currentPlayer);
-        
-        notifyObservers(); 
     }
 
     public void processIncomeAndRepair(PlayerId player) {
@@ -302,6 +297,6 @@ public class Game implements Observable {
             buildings.put(position, building);
         }
 
-        notifyObservers();
+        fireGameEvent(null, "Snapshot restored");
     }
 }
