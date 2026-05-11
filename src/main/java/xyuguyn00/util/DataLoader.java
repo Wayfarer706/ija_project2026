@@ -1,5 +1,8 @@
 package xyuguyn00.util;
 
+import xyuguyn00.common.enums.MovementType;
+import xyuguyn00.common.enums.TerrainType;
+import xyuguyn00.common.enums.UnitType;
 import xyuguyn00.model.*;
 
 import java.nio.file.Files;
@@ -16,8 +19,8 @@ public class DataLoader {
     /**
      * Parses the terrain.tsv file into a Map keyed by the terrain name.
      */
-    public static Map<String, TerrainData> loadTerrain(String filePath) throws Exception {
-        Map<String, TerrainData> terrain = new HashMap<>();
+    public static Map<TerrainType, TerrainData> loadTerrain(String filePath) throws Exception {
+        Map<TerrainType, TerrainData> terrain = new HashMap<>();
         List<String> lines = Files.readAllLines(Path.of(filePath));
 
         for (int i = 1; i < lines.size(); i++) {
@@ -25,6 +28,7 @@ public class DataLoader {
             if (parts.length >= 4) {
                 // Strip the English translation from the name e.g., "Pláň (Plain)" -> "Pláň"
                 String name = parts[0].trim().split(" ")[0]; 
+                TerrainType terrainType = TerrainType.fromString(name);
                 
                 // Parse defense bonus (treating "-" as 0)
                 int defenseBonus = parts[1].trim().equals("-") ? 0 : Integer.parseInt(parts[1].trim());
@@ -35,7 +39,7 @@ public class DataLoader {
                 String vehRaw = parts[3].trim().toLowerCase();
                 int vehCost = (vehRaw.equals("-") || vehRaw.startsWith("nepr")) ? -1 : Integer.parseInt(parts[3].trim());
 
-                terrain.put(name, new TerrainData(name, defenseBonus, infCost, vehCost));
+                terrain.put(terrainType, new TerrainData(terrainType, defenseBonus, infCost, vehCost));
             }
         }
         return terrain;
@@ -44,16 +48,16 @@ public class DataLoader {
     /**
      * Parses the units.tsv file into a Map keyed by the unit name.
      */
-    public static Map<String, UnitData> loadUnits(String filePath) throws Exception {   
-        Map<String, UnitData> units = new HashMap<>();
+    public static Map<UnitType, UnitData> loadUnits(String filePath) throws Exception {   
+        Map<UnitType, UnitData> units = new HashMap<>();
         List<String> lines = Files.readAllLines(Path.of(filePath));
 
         for (int i = 1; i < lines.size(); i++) {
             String[] parts = lines.get(i).split("\t");
             if (parts.length >= 5) {
-                String name = parts[0].trim();
-                int cost = Integer.parseInt(parts[1].replaceAll("\\s+", "")); 
-                String movementType = parts[2].trim();
+                UnitType unitType = UnitType.fromCzechName(parts[0].trim());
+                int cost = Integer.parseInt(parts[1].replaceAll("\\s+", ""));
+                MovementType movementType = MovementType.fromString(parts[2].trim());
                 int movementRange = Integer.parseInt(parts[3].trim());
                 
                 String rawAttackRange = parts[4].trim().split(" ")[0];
@@ -69,7 +73,7 @@ public class DataLoader {
                     maxRange = minRange;
                 }
 
-                units.put(name, new UnitData(name, cost, movementType, movementRange, minRange, maxRange));
+                units.put(unitType, new UnitData(unitType, cost, movementType, movementRange, minRange, maxRange));
             }
         }
         return units;
@@ -90,8 +94,8 @@ public class DataLoader {
             String[] parts = line.split("\t");
             if (parts.length < 3) continue;
 
-            String attacker = parts[0].trim();
-            String defender = parts[1].trim();
+            UnitType attacker = UnitType.fromCzechName(parts[0].trim());
+            UnitType defender = UnitType.fromCzechName(parts[1].trim());
             int damage = Integer.parseInt(parts[2].trim());
 
             damageRules.add(new UnitDamageData(attacker, defender, damage));

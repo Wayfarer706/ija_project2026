@@ -1,6 +1,10 @@
 package xyuguyn00.game;
 
 import xyuguyn00.common.Position;
+import xyuguyn00.common.enums.BuildingType;
+import xyuguyn00.common.enums.PlayerId;
+import xyuguyn00.common.enums.TerrainType;
+import xyuguyn00.common.enums.UnitType;
 import xyuguyn00.model.GameMapData;
 import xyuguyn00.model.TerrainData;
 import xyuguyn00.model.UnitDamageData;
@@ -16,8 +20,8 @@ public class GameFactory {
 
     public static Game createGame(String mapFilePath, String terrainFilePath, String unitsFilePath, String damagePath) throws Exception {
         // Load rules
-        Map<String, TerrainData> terrainRules = DataLoader.loadTerrain(terrainFilePath);
-        Map<String, UnitData> unitRules = DataLoader.loadUnits(unitsFilePath);
+        Map<TerrainType, TerrainData> terrainRules = DataLoader.loadTerrain(terrainFilePath);
+        Map<UnitType, UnitData> unitRules = DataLoader.loadUnits(unitsFilePath);
         List<UnitDamageData> damageRules = DataLoader.loadDamage(damagePath);
         
         // Load JSON Map Data
@@ -54,10 +58,6 @@ public class GameFactory {
         int width = mapData.width();
         int height = mapData.height();
 
-        // Allowed Types
-        Set<String> validBuildings = Set.of("Město", "Továrna", "Velitelství");
-        Set<String> validUnits = Set.of("Pěchota", "Tank", "Dělostřelectvo");
-
         // Layout matches dimensions
         if (mapData.layout().size() != height) {
             throw new Exception("JSON Layout row count does not match the 'height' parameter.");
@@ -74,10 +74,6 @@ public class GameFactory {
         Set<String> occupiedBuildingTiles = new HashSet<>();
 
         for (GameMapData.BuildingInitData b : mapData.buildings()) {
-            if (!validBuildings.contains(b.type())) {
-                throw new Exception("CRITICAL DATA ERROR: Invalid building type '" + b.type() + "'. Expected one of: " + validBuildings);
-            }
-
             // Bound check
             if (b.x() < 0 || b.x() >= width || b.y() < 0 || b.y() >= height) {
                 throw new Exception("Building '" + b.type() + "' is placed completely off the map at coordinates (" + b.x() + ", " + b.y() + ").");
@@ -91,9 +87,12 @@ public class GameFactory {
 
             occupiedBuildingTiles.add(coordKey);
 
-            char terrainChar = mapData.layout().get(b.y()).replace(" ", "").charAt(b.x());
-            if (terrainChar == 'W' || terrainChar == 'M') {
-                throw new Exception("CRITICAL DATA ERROR: Building '" + b.type() + "' at (" + b.x() + ", " + b.y() + ") is placed on impassable terrain (Water/Mountain)!");
+            TerrainType terrainType = TerrainType.fromSymbol(
+                mapData.layout().get(b.y()).replace(" ", "").charAt(b.x())
+            );
+
+            if (terrainType == TerrainType.WATER || terrainType == TerrainType.MOUNTAIN) {
+                throw new Exception("CRITICAL DATA ERROR: Building '" + b.type().label() + "' at (" + b.x() + ", " + b.y() + ") is placed on impassable terrain (Water/Mountain)!");
             }
         }
 
@@ -101,10 +100,6 @@ public class GameFactory {
         Set<String> occupiedUnitTiles = new HashSet<>();
 
         for (GameMapData.UnitInitData u : mapData.units()) {
-            if (!validUnits.contains(u.type())) {
-                throw new Exception("CRITICAL DATA ERROR: Invalid unit type '" + u.type() + "'. Expected one of: " + validUnits);
-            }
-
             // Bounds Check
             if (u.x() < 0 || u.x() >= width || u.y() < 0 || u.y() >= height) {
                 throw new Exception("Unit '" + u.type() + "' is placed completely off the map at coordinates (" + u.x() + ", " + u.y() + ").");
@@ -119,13 +114,15 @@ public class GameFactory {
             occupiedUnitTiles.add(coordKey);
 
             // Terrain Passability Check
-            char terrainChar = mapData.layout().get(u.y()).replace(" ", "").charAt(u.x());
+            TerrainType terrainType = TerrainType.fromSymbol(
+                mapData.layout().get(u.y()).replace(" ", "").charAt(u.x())
+            );
             
-            if (terrainChar == 'W') {
+            if (terrainType == TerrainType.WATER) {
                 throw new Exception("CRITICAL DATA ERROR: Unit placed on impassable terrain (Water) at (" + u.x() + ", " + u.y() + ")!");
             }
             
-            if (terrainChar == 'M' && (u.type().equals("Tank") || u.type().equals("Dělostřelectvo"))) {
+            if (terrainType == TerrainType.MOUNTAIN && (u.type() == UnitType.TANK || u.type() == UnitType.ARTILLERY)) {
                 throw new Exception("CRITICAL DATA ERROR: Vehicle placed on impassable Mountain at (" + u.x() + ", " + u.y() + ")!");
             }
         }
@@ -135,10 +132,10 @@ public class GameFactory {
         int p2HqCount = 0;
 
         for (GameMapData.BuildingInitData b : mapData.buildings()) {
-            if (b.type().equals("Velitelství")) {
-                if (b.owner().equals("Player 1")) {
+            if (b.type() == BuildingType.HQ) {
+                if (b.owner() == PlayerId.PLAYER_1) {
                     p1HqCount++;
-                } else if (b.owner().equals("Player 2")) {
+                } else if (b.owner() == PlayerId.PLAYER_2) {
                     p2HqCount++;
                 }
             }

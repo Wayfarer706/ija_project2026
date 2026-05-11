@@ -1,12 +1,15 @@
 package xyuguyn00.model;
 
+import xyuguyn00.common.enums.MovementType;
+import xyuguyn00.common.enums.UnitType;
+
 /**
  * Immutable record representing the base stats and rules for a unit class.
  */
 public record UnitData (
-    String unitName,
+    UnitType unitType,
     int cost,
-    String movementType,
+    MovementType movementType,
     int movementRange,
     int minAttackRange,
     int maxAttackRange

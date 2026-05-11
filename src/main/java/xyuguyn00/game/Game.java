@@ -6,14 +6,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Collections;
+import java.util.EnumMap;
 
 import xyuguyn00.common.Position;
+import xyuguyn00.common.enums.BuildingType;
+import xyuguyn00.common.enums.PlayerId;
+import xyuguyn00.common.enums.TerrainType;
+import xyuguyn00.common.enums.UnitType;
 import xyuguyn00.common.GameEvent;
 import xyuguyn00.tool.GameObserver;
 import xyuguyn00.tool.Observable;
 import xyuguyn00.model.TerrainData;
 import xyuguyn00.model.UnitDamageData;
-import xyuguyn00.common.UnitType;
 import xyuguyn00.log.BuildingSnapshot;
 import xyuguyn00.log.GameSnapshot;
 import xyuguyn00.log.UnitSnapshot;
@@ -29,19 +33,19 @@ public class Game implements Observable {
     private final String[] mapDefinition;
     private final Map<Position, Unit> units = new HashMap<>();
     private final Map<Position, Building> buildings = new HashMap<>();
-    private final Map<String, Integer> playerFunds = new HashMap<>(Map.of("Player 1", 0, "Player 2", 0));
+    private final Map<PlayerId, Integer> playerFunds = new EnumMap<>(PlayerId.class);
     private final List<GameObserver> observers = new ArrayList<>();
     private final int width;
     private final int height;
     private final CombatService combatService;
     private final PathfindingService pathfindingService;
     private final EconomyService economyService;
-    private String currentPlayer = "Player 1"; 
+    private PlayerId currentPlayer = PlayerId.PLAYER_1; 
 
     // Data-driven dependencies
     private final UnitFactory unitFactory;
 
-    public Game(String[] mapDefinition, UnitFactory unitFactory, Map<String, TerrainData> terrainRules, List<UnitDamageData> damageRules) {
+    public Game(String[] mapDefinition, UnitFactory unitFactory, Map<TerrainType, TerrainData> terrainRules, List<UnitDamageData> damageRules) {
         this.mapDefinition = mapDefinition;
         this.width = mapDefinition[0].replace(" ", "").length();
         this.height = mapDefinition.length;
@@ -49,22 +53,20 @@ public class Game implements Observable {
         this.combatService = new CombatService(mapDefinition, terrainRules, damageRules);
         this.pathfindingService = new PathfindingService(mapDefinition, terrainRules);
         this.economyService = new EconomyService();
-    }
 
-    public Unit createUnit(String type, String player, int x, int y) {
-        Position position = new Position(x, y);
-        // Engine delegates instantiation to the Factory
-        Unit unit = unitFactory.createUnit(type, player, position);
-        units.put(position, unit);
-        return unit;
-    }
-
-    public Unit createUnit(UnitType type, String player, int x, int y) {
-        return createUnit(type.getCzechName(), player, x, y);
+        playerFunds.put(PlayerId.PLAYER_1, 0);
+        playerFunds.put(PlayerId.PLAYER_2, 0);
     }
 
     public Set<Position> getUnitPositions() {
         return Set.copyOf(units.keySet());
+    }
+
+    public Unit createUnit(UnitType type, PlayerId player, int x, int y) {
+        Position position = new Position(x, y);
+        Unit unit = unitFactory.createUnit(type, player, position);
+        units.put(position, unit);
+        return unit;
     }
 
     // --- MVC Observer Pattern Implementation ---
@@ -129,7 +131,7 @@ public class Game implements Observable {
         // Validation: Must have a unit, a building, unit must be Infantry, and building must be enemy/neutral
         if (unit == null || building == null) return false;
         if (unit.getUnitType() != UnitType.INFANTRY) return false;
-        if (building.getOwner().equals(unit.getPlayer())) return false;
+        if (building.getOwner() == unit.getPlayer()) return false;
 
         // Math: 10% of current HP rounded down
         int captureDamage = (int) Math.floor(unit.getHp() * 0.1);
@@ -141,7 +143,7 @@ public class Game implements Observable {
             building.resetCapturePoints(); // Reset to 20 for future
             
             // Check Win Condition
-            if (building.getType().equals("Velitelství")) {
+            if (building.getType() == BuildingType.HQ) {
                 System.out.println(unit.getPlayer() + " WINS THE GAME!");
             }
         }
@@ -163,26 +165,22 @@ public class Game implements Observable {
 
     // --- Factory Shop Logic ---
 
-    public int getUnitCost(String type) {
+    public int getUnitCost(UnitType type) {
         return unitFactory.getUnitCost(type);
     }
 
-    public int getUnitCost(UnitType type) {
-        return getUnitCost(type.getCzechName());
-    }
-
-    public boolean purchaseUnit(String unitType, Position pos) {
+    public boolean purchaseUnit(UnitType unitType, Position pos) {
         Building building = buildings.get(pos);
 
         if (building == null) {
             return false;
         }
 
-        if (!"Továrna".equals(building.getType())) {
+        if (building.getType() != BuildingType.FACTORY) {
             return false;
         }
 
-        if (!building.getOwner().equals(currentPlayer)) {
+        if (building.getOwner() != currentPlayer) {
             return false;
         }
 
@@ -207,10 +205,6 @@ public class Game implements Observable {
         return true;
     }
 
-    public boolean purchaseUnit(UnitType type, Position pos) {
-        return purchaseUnit(type.getCzechName(), pos);
-    }
-
     // --- Getters for the View Layer ---
     
     public int getWidth() { return width; }
@@ -225,17 +219,17 @@ public class Game implements Observable {
 
     // --- Turn Management ---
 
-    public String getCurrentPlayer() {
+    public PlayerId getCurrentPlayer() {
         return currentPlayer;
     }
 
-    public int getPlayerFunds(String player) {
+    public int getPlayerFunds(PlayerId player) {
         return playerFunds.getOrDefault(player, 0);
     }
 
     public void endTurn() {
         // Toggle the active player
-        currentPlayer = currentPlayer.equals("Player 1") ? "Player 2" : "Player 1";
+        currentPlayer = currentPlayer.next();
         
         // Reset unit movement for everyone
         for (Unit unit : units.values()) {
@@ -247,7 +241,7 @@ public class Game implements Observable {
         notifyObservers(); 
     }
 
-    public void processIncomeAndRepair(String player) {
+    public void processIncomeAndRepair(PlayerId player) {
         economyService.processIncomeAndRepair(player, playerFunds, buildings, units);
     }
 
@@ -267,7 +261,7 @@ public class Game implements Observable {
         return Collections.unmodifiableMap(buildings);
     }
 
-    public Map<String, Integer> getPlayerFundsSnapshot() {
+    public Map<PlayerId, Integer> getPlayerFundsSnapshot() {
         return Collections.unmodifiableMap(playerFunds);
     }
 
