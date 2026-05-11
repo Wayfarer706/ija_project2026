@@ -4,9 +4,9 @@ import java.util.List;
 
 import xyuguyn00.common.GameActionHandler;
 import xyuguyn00.common.Result;
-import xyuguyn00.dto.GameActionDto;
 import xyuguyn00.game.Game;
 import xyuguyn00.log.GameSnapshot;
+import xyuguyn00.model.GameActionDto;
 import xyuguyn00.service.ActionValidationService;
 import xyuguyn00.service.GameLogService;
 
@@ -80,6 +80,8 @@ public class GameActionDispatcher {
                     } catch (Exception e) {
                         return Result.failure("Action was performed, but game log could not be saved: " + e.getMessage());
                     }
+
+                    game.fireGameEvent(action.getType(), "Action performed: " + action.getType());
                 }
 
                 return result;

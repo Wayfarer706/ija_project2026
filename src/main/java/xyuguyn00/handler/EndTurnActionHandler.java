@@ -3,8 +3,8 @@ package xyuguyn00.handler;
 import xyuguyn00.common.GameActionHandler;
 import xyuguyn00.common.Result;
 import xyuguyn00.common.enums.GameActionType;
-import xyuguyn00.dto.GameActionDto;
 import xyuguyn00.game.Game;
+import xyuguyn00.model.GameActionDto;
 
 public class EndTurnActionHandler implements GameActionHandler {
     private final Game game;

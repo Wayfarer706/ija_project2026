@@ -1,4 +1,4 @@
-package xyuguyn00.dto;
+package xyuguyn00.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,12 +7,10 @@ import java.util.List;
 import xyuguyn00.common.Position;
 
 public class AvailableActionsDto {
-    private final boolean canWait;
     private final boolean canCapture;
     private final List<Position> attackTargets;
 
-    public AvailableActionsDto(boolean canWait, boolean canCapture, List<Position> attackTargets) {
-        this.canWait = canWait;
+    public AvailableActionsDto(boolean canCapture, List<Position> attackTargets) {
         this.canCapture = canCapture;
         this.attackTargets = new ArrayList<>(attackTargets);
     }

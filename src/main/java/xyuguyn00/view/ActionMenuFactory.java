@@ -2,8 +2,8 @@ package xyuguyn00.view;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import xyuguyn00.dto.AvailableActionsDto;
 import xyuguyn00.game.Building;
+import xyuguyn00.model.AvailableActionsDto;
 
 public class ActionMenuFactory {
     public ContextMenu createActionMenu(

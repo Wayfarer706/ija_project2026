@@ -7,10 +7,10 @@ import xyuguyn00.common.Position;
 import xyuguyn00.common.Result;
 import xyuguyn00.common.enums.BuildingType;
 import xyuguyn00.common.enums.UnitType;
-import xyuguyn00.dto.AvailableActionsDto;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
+import xyuguyn00.model.AvailableActionsDto;
 
 public class ActionValidationService {
     private final Game game;
@@ -151,16 +151,15 @@ public class ActionValidationService {
 
     public AvailableActionsDto getAvailableActions(Position from, Position afterMovePosition) {
         if (from == null || afterMovePosition == null) {
-            return new AvailableActionsDto(false, false, List.of());
+            return new AvailableActionsDto(false, List.of());
         }
 
         Unit unit = game.getUnitAt(from);
 
         if (unit == null) {
-            return new AvailableActionsDto(false, false, List.of());
+            return new AvailableActionsDto(false, List.of());
         }
 
-        boolean canWait = game.getReachableTiles(from).contains(afterMovePosition);
         boolean canCapture = canCaptureFromVirtualPosition(unit, afterMovePosition);
 
         List<Position> attackTargets = List.of();
@@ -169,7 +168,7 @@ public class ActionValidationService {
             attackTargets = getAttackTargetsFromVirtualPosition(unit, afterMovePosition);
         }
 
-        return new AvailableActionsDto(canWait, canCapture, attackTargets);
+        return new AvailableActionsDto(canCapture, attackTargets);
     }
 
     private boolean canCaptureFromVirtualPosition(Unit unit, Position position) {

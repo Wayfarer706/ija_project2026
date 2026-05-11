@@ -14,9 +14,9 @@ import javafx.scene.text.Text;
 import xyuguyn00.common.GameEvent;
 import xyuguyn00.common.enums.GameActionType;
 import xyuguyn00.common.enums.PlayerId;
-import xyuguyn00.dto.GameActionDto;
 import xyuguyn00.game.Game;
 import xyuguyn00.handler.GameActionDispatcher;
+import xyuguyn00.model.GameActionDto;
 import xyuguyn00.service.GameLogService;
 import xyuguyn00.tool.GameObserver;
 

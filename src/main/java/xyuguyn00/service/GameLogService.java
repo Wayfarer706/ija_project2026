@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import xyuguyn00.common.Position;
-import xyuguyn00.dto.GameActionDto;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
@@ -20,6 +19,7 @@ import xyuguyn00.log.GameLogEntry;
 import xyuguyn00.log.GameSnapshot;
 import xyuguyn00.log.PositionSnapshot;
 import xyuguyn00.log.UnitSnapshot;
+import xyuguyn00.model.GameActionDto;
 
 public class GameLogService {
     private final ObjectMapper mapper;
