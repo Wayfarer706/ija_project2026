@@ -1,7 +1,6 @@
 package xyuguyn00.game;
 
 import xyuguyn00.common.Position;
-import xyuguyn00.common.enums.MovementType;
 import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.common.enums.UnitType;
 import xyuguyn00.model.UnitData;
