@@ -1,4 +1,4 @@
-package xyuguyn00.dto;
+package xyuguyn00.common.enums;
 
 public enum GameActionType {
     MOVE,
