@@ -104,6 +104,16 @@ public class Unit {
         return UnitType.fromCzechName(data.unitName());
     }
 
+    public void setHp(int hp) {
+        if (hp < 0) {
+            this.hp = 0;
+        } else if (hp > 100) {
+            this.hp = 100;
+        } else {
+            this.hp = hp;
+        }
+    }
+
     @Override
     public String toString() {
         return String.format("{%s[%d, %d][%d]}", data.unitName(), position.getX(), position.getY(), hp);

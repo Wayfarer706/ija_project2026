@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collections;
 
 import xyuguyn00.common.Position;
 import xyuguyn00.common.GameEvent;
@@ -13,6 +14,9 @@ import xyuguyn00.tool.Observable;
 import xyuguyn00.model.TerrainData;
 import xyuguyn00.model.UnitDamageData;
 import xyuguyn00.common.UnitType;
+import xyuguyn00.log.BuildingSnapshot;
+import xyuguyn00.log.GameSnapshot;
+import xyuguyn00.log.UnitSnapshot;
 import xyuguyn00.service.CombatService;
 import xyuguyn00.service.EconomyService;
 import xyuguyn00.service.PathfindingService;
@@ -253,5 +257,57 @@ public class Game implements Observable {
 
     public Building getBuildingAt(Position pos) {
         return buildings.get(pos);
+    }
+
+    public Map<Position, Unit> getUnitsSnapshot() {
+        return Collections.unmodifiableMap(units);
+    }
+
+    public Map<Position, Building> getBuildingsSnapshot() {
+        return Collections.unmodifiableMap(buildings);
+    }
+
+    public Map<String, Integer> getPlayerFundsSnapshot() {
+        return Collections.unmodifiableMap(playerFunds);
+    }
+
+    // logging
+    public void restoreFromSnapshot(GameSnapshot snapshot) {
+        units.clear();
+        buildings.clear();
+        playerFunds.clear();
+
+        currentPlayer = snapshot.currentPlayer();
+        playerFunds.putAll(snapshot.playerFunds());
+
+        for (UnitSnapshot unitSnapshot : snapshot.units()) {
+            Position position = new Position(unitSnapshot.x(), unitSnapshot.y());
+
+            Unit unit = unitFactory.createUnit(
+                unitSnapshot.type(),
+                unitSnapshot.owner(), 
+                position
+            );
+
+            unit.setHp(unitSnapshot.hp());
+            unit.setMoved(unitSnapshot.moved());
+
+            units.put(position, unit);
+        }
+
+        for (BuildingSnapshot buildingSnapshot : snapshot.buildings()) {
+            Position position = new Position(buildingSnapshot.x(), buildingSnapshot.y());
+
+            Building building = new Building(position,
+                buildingSnapshot.type(), 
+                buildingSnapshot.owner()
+            );
+
+            building.setCapturePoints(buildingSnapshot.capturePoints());
+
+            buildings.put(position, building);
+        }
+
+        notifyObservers();
     }
 }

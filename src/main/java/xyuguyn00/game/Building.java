@@ -46,4 +46,14 @@ public class Building {
     public void resetCapturePoints() {
         this.capturePoints = 20;
     }
+
+    public void setCapturePoints(int capturePoints) {
+        if (capturePoints < 0) {
+            this.capturePoints = 0;
+        } else if (capturePoints > 20) {
+            this.capturePoints = 20;
+        } else {
+            this.capturePoints = capturePoints;
+        }
+    }
 }
