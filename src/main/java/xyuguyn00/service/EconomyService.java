@@ -3,6 +3,8 @@ package xyuguyn00.service;
 import java.util.Map;
 
 import xyuguyn00.common.Position;
+import xyuguyn00.common.enums.BuildingType;
+import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Unit;
 
@@ -12,8 +14,8 @@ public class EconomyService {
     private static final int MAX_UNIT_HP = 100;
 
     public void processIncomeAndRepair( 
-        String player,
-        Map<String, Integer> playerFunds,
+        PlayerId player,
+        Map<PlayerId, Integer> playerFunds,
         Map<Position, Building> buildings,
         Map<Position, Unit> units
     ) {
@@ -25,9 +27,9 @@ public class EconomyService {
         playerFunds.put(player, currentFunds);
     }
 
-    private int addIncome(String player, int currentFunds, Map<Position, Building> buildings) {
+    private int addIncome(PlayerId player, int currentFunds, Map<Position, Building> buildings) {
         for (Building building : buildings.values()) {
-            if (building.getOwner().equals(player) && "Město".equals(building.getType())) {
+            if (building.getOwner() == player && building.getType() == BuildingType.CITY) {
                 currentFunds += CITY_INCOME;
             }
         }
@@ -36,13 +38,13 @@ public class EconomyService {
     }
 
     private int repairUnits(
-        String player,
+        PlayerId player,
         int currentFunds,
         Map<Position, Building> buildings,
         Map<Position, Unit> units
     ) {
         for (Building building : buildings.values()) {
-            if (!building.getOwner().equals(player)) {
+            if (building.getOwner() != player) {
                 continue;
             }
 
@@ -52,7 +54,7 @@ public class EconomyService {
                 continue;
             }
 
-            if (!unit.getPlayer().equals(player)) {
+            if (unit.getPlayer() != player) {
                 continue;
             }
 

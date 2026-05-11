@@ -7,9 +7,9 @@ import javafx.scene.layout.GridPane;
 import xyuguyn00.common.GameEvent;
 import xyuguyn00.common.Position;
 import xyuguyn00.common.Result;
+import xyuguyn00.common.enums.GameActionType;
 import xyuguyn00.dto.AvailableActionsDto;
 import xyuguyn00.dto.GameActionDto;
-import xyuguyn00.dto.GameActionType;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
@@ -270,7 +270,7 @@ public class GameView extends GridPane implements GameObserver {
         if (replayMode) {
             return;
         }
-        
+
         ContextMenu shopMenu = factoryMenuFactory.createFactoryMenu(
                 game::getUnitCost,
                 type -> game.getPlayerFunds(game.getCurrentPlayer()) < game.getUnitCost(type)

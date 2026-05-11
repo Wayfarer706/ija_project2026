@@ -53,7 +53,7 @@ public class GameLogService {
                 return new UnitSnapshot(
                     position.getX(),
                     position.getY(),
-                    unit.getType(),
+                    unit.getUnitType(),
                     unit.getPlayer(),
                     unit.getHp(),
                     unit.hasMoved()
@@ -96,12 +96,12 @@ public class GameLogService {
         ensureLogStarted();
 
         GameLogEntry entry = new GameLogEntry(
-            action.getType().name(),
+            action.getType(),
             before.currentPlayer(),
             toSnapshot(action.getFrom()),
             toSnapshot(action.getTo()),
             toSnapshot(action.getTarget()),
-            action.getUnitType() == null ? null : action.getUnitType().getCzechName(),
+            action.getUnitType(),
             before,
             after
         );
@@ -113,27 +113,6 @@ public class GameLogService {
     public void save(Path filePath) throws Exception {
         ensureLogStarted();
         mapper.writeValue(filePath.toFile(), currentLog);
-    }
-
-    public GameLogData load(Path filePath) throws Exception {
-        this.currentLog = mapper.readValue(filePath.toFile(), GameLogData.class);
-        this.replayIndex = 0;
-        return currentLog;
-    }
-
-    public GameLogData getCurrentLog() {
-        ensureLogStarted();
-        return currentLog;
-    }
-
-    public void clearAndStartFrom(Game game) {
-        startNewLog(game);
-    }
-
-    public void loadForReplay(Path filePath, Game game) throws Exception {
-        load(filePath);
-        game.restoreFromSnapshot(currentLog.initialState());
-        replayIndex = 0;
     }
 
     public boolean canStepForward() {
@@ -186,16 +165,6 @@ public class GameLogService {
         if (currentLog == null) {
             throw new IllegalStateException("Game log was not started.");
         }
-    }
-
-    // Methods for buttons
-    public int getReplayIndex() {
-        return replayIndex;
-    }
-
-    public int getActionCount() {
-        ensureLogStarted();
-        return currentLog.actions().size();
     }
 
     public boolean isAtLatestState() {

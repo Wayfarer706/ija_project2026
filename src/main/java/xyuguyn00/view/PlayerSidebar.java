@@ -12,8 +12,9 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import xyuguyn00.common.GameEvent;
+import xyuguyn00.common.enums.GameActionType;
+import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.dto.GameActionDto;
-import xyuguyn00.dto.GameActionType;
 import xyuguyn00.game.Game;
 import xyuguyn00.handler.GameActionDispatcher;
 import xyuguyn00.service.GameLogService;
@@ -64,8 +65,8 @@ public class PlayerSidebar extends VBox implements GameObserver {
         p2GoldText.setFill(Color.GOLD);
         p2GoldText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
-        player1Card = createPlayerCard("Player 1", Color.DARKBLUE, p1GoldText);
-        player2Card = createPlayerCard("Player 2", Color.DARKRED, p2GoldText);
+        player1Card = createPlayerCard(PlayerId.PLAYER_1.label(), Color.DARKBLUE, p1GoldText);
+        player2Card = createPlayerCard(PlayerId.PLAYER_2.label(), Color.DARKRED, p2GoldText);
 
         endTurnBtn = new Button("End Turn");
         backBtn = new Button("Back");
@@ -142,7 +143,7 @@ public class PlayerSidebar extends VBox implements GameObserver {
         String inactiveBorder = "-fx-border-color: gray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #3c3c3c; -fx-background-radius: 5;";
 
         // Update active player highlight
-        if (game.getCurrentPlayer().equals("Player 1")) {
+        if (game.getCurrentPlayer() == PlayerId.PLAYER_1) {
             player1Card.setStyle(activeBorder);
             player2Card.setStyle(inactiveBorder);
         } else {
@@ -151,8 +152,8 @@ public class PlayerSidebar extends VBox implements GameObserver {
         }
         
         // Update Gold Counters dynamically from the engine
-        p1GoldText.setText("Gold: " + game.getPlayerFunds("Player 1"));
-        p2GoldText.setText("Gold: " + game.getPlayerFunds("Player 2"));
+        p1GoldText.setText("Gold: " + game.getPlayerFunds(PlayerId.PLAYER_1));
+        p2GoldText.setText("Gold: " + game.getPlayerFunds(PlayerId.PLAYER_2));
     }
 
     private void showError(String title, String content) {

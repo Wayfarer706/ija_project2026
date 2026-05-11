@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.PriorityQueue;
 
 import xyuguyn00.common.Position;
+import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.game.Unit;
 import xyuguyn00.model.TerrainData;
 
@@ -15,19 +16,9 @@ public class PathfindingService {
     private final String[] mapDefinition;
     private final int width;
     private final int height;
-    private final Map<String, TerrainData> terrainRules;
+    private final Map<TerrainType, TerrainData> terrainRules;
 
-    private static final Map<Character, String> TERRAIN_CHAR_MAP = Map.of(
-        'P', "Pláň",
-        'F', "Les",
-        'M', "Hora",
-        'W', "Voda",
-        'C', "Město",
-        'T', "Továrna",
-        'H', "Velitelství"
-    );
-
-    public PathfindingService(String[] mapDefinition, Map<String, TerrainData> terrainRules) {
+    public PathfindingService(String[] mapDefinition, Map<TerrainType, TerrainData> terrainRules) {
         this.mapDefinition = mapDefinition;
         this.width = mapDefinition[0].replace(" ", "").length();
         this.height = mapDefinition.length;
@@ -64,9 +55,9 @@ public class PathfindingService {
                 int nextRow = current.position.getX() + dRow[i]; 
                 int nextCol = current.position.getY() + dCol[i]; 
 
-                char terrainChar = getTerrainAt(nextRow, nextCol);
+                TerrainType terrainType = getTerrainAt(nextRow, nextCol);
                 
-                if (terrainChar == '\0') {
+                if (terrainType == null) {
                     continue;
                 }
 
@@ -75,20 +66,14 @@ public class PathfindingService {
                 Unit occupyingUnit = units.get(nextPosition);
 
                 if (occupyingUnit != null) {
-                    boolean isFriendly = occupyingUnit.getPlayer().equals(unit.getPlayer());
+                    boolean isFriendly = occupyingUnit.getPlayer() == unit.getPlayer();
                     // Enemy units act as a solid wall. 
                     if (!isFriendly) {
                         continue; 
                     }
                 }
 
-                String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
-
-                if (terrainName == null) {
-                    continue;
-                }
-
-                TerrainData terrainData = terrainRules.get(terrainName);
+                TerrainData terrainData = terrainRules.get(terrainType);
                 int stepCost = unit.getTerrainCost(terrainData);
 
                 if (stepCost < 0 || stepCost >= 99) {
@@ -153,9 +138,9 @@ public class PathfindingService {
                 int nextRow = current.position.getX() + dRow[i]; 
                 int nextCol = current.position.getY() + dCol[i]; 
 
-                char terrainChar = getTerrainAt(nextRow, nextCol);
-
-                if (terrainChar == '\0') {
+                TerrainType terrainType = getTerrainAt(nextRow, nextCol);
+                
+                if (terrainType == null) {
                     continue;
                 }
 
@@ -163,12 +148,11 @@ public class PathfindingService {
 
                 Unit occupyingUnit = units.get(nextPos);
 
-                if (occupyingUnit != null && !occupyingUnit.getPlayer().equals(unit.getPlayer())) {
+                if (occupyingUnit != null && occupyingUnit.getPlayer() != unit.getPlayer()) {
                     continue; // Treat enemies as solid walls
                 }
 
-                String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
-                TerrainData terrainData = terrainRules.get(terrainName);
+                TerrainData terrainData = terrainRules.get(terrainType);
 
                 if (terrainData == null) {
                     continue;
@@ -204,12 +188,12 @@ public class PathfindingService {
         return path;
     }
 
-    private char getTerrainAt(int row, int col) {
+    private TerrainType getTerrainAt(int row, int col) {
         if (row >= 0 && row < height && col >= 0 && col < width) {
-            return mapDefinition[row].replace(" ", "").charAt(col);
+            return TerrainType.fromSymbol(mapDefinition[row].replace(" ", "").charAt(col));
         }
 
-        return '\0';
+        return null;
     }
 
     private static class Node {
