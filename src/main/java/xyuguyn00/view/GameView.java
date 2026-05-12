@@ -1,25 +1,19 @@
 package xyuguyn00.view;
 
 import javafx.application.Platform;
-import javafx.scene.control.ContextMenu;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import xyuguyn00.common.GameEvent;
 import xyuguyn00.common.Position;
-import xyuguyn00.common.enums.GameActionType;
 import xyuguyn00.game.Game;
 import xyuguyn00.handler.GameActionDispatcher;
-import xyuguyn00.model.GameActionDto;
 import xyuguyn00.tool.GameObserver;
 
 public class GameView extends GridPane implements GameObserver {
     private final Game game;
     private final int tileSize = 60; 
-
-    private final GameActionDispatcher dispatcher;
     private final TileRenderer tileRenderer;
     private final GameBoardView boardView;
-    private final FactoryMenuFactory factoryMenuFactory;
     
     private final InteractionController interactionController;
 
@@ -29,17 +23,14 @@ public class GameView extends GridPane implements GameObserver {
         this.game = game;
         this.game.addObserver(this); 
         this.setStyle("-fx-alignment: center; -fx-padding: 20; -fx-background-color: #2F4F4F;");
-        this.dispatcher = dispatcher;
         
         this.tileRenderer = new TileRenderer(tileSize, assetManager);
         this.boardView = new GameBoardView(game, tileRenderer);
-        this.factoryMenuFactory = new FactoryMenuFactory();
         
         this.interactionController = new InteractionController(game, dispatcher, this);
 
         this.boardView.setOnTileClicked(this::handleTileClick);
         this.boardView.setOnTileHovered(this::handleTileHover);
-        this.boardView.setOnFactoryMenuRequested(this::showFactoryMenu);
 
         this.add(boardView, 0, 0);
 
@@ -63,27 +54,6 @@ public class GameView extends GridPane implements GameObserver {
 
     public void requestRender() {
         Platform.runLater(() -> boardView.render(interactionController.getViewState()));
-    }
-
-    private void showFactoryMenu(Position pos, javafx.scene.Node tile, double screenX, double screenY) {
-        if (replayMode) return;
-
-        ContextMenu shopMenu = factoryMenuFactory.createFactoryMenu(
-                game::getUnitCost,
-                type -> game.getPlayerFunds(game.getCurrentPlayer()) < game.getUnitCost(type)
-                        || game.getUnitAt(pos) != null,
-                type -> {
-                    dispatcher.dispatch(
-                        GameActionDto.builder(GameActionType.PURCHASE)
-                                .to(pos)
-                                .unitType(type)
-                                .build()
-                    );
-                    interactionController.clearSelection();
-                }
-        );
-
-        shopMenu.show(tile, screenX, screenY);
     }
 
     @Override

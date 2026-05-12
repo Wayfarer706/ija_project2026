@@ -28,13 +28,13 @@ public class TileRenderer {
     }
 
     public Node createTerrainBackground(TerrainType terrainType, Position pos, String[] map) {
-        int row = pos.getX();
-        int col = pos.getY();
+        int x = pos.getX();
+        int y = pos.getY();
 
         if (terrainType == TerrainType.FOREST || terrainType == TerrainType.MOUNTAIN) {
             javafx.scene.layout.StackPane layeredTile = new javafx.scene.layout.StackPane();
 
-            ImageView baseGrass = new ImageView(assetManager.getGrassVariation(col, row));
+            ImageView baseGrass = new ImageView(assetManager.getGrassVariation(y, x));
             baseGrass.setFitWidth(tileSize);
             baseGrass.setFitHeight(tileSize);
             baseGrass.setSmooth(false);
@@ -51,14 +51,14 @@ public class TileRenderer {
         Image texture;
         if (terrainType == TerrainType.WATER) {
             // Pass the map array to the helper method
-            boolean up = isWater(row - 1, col, map);
-            boolean down = isWater(row + 1, col, map);
-            boolean left = isWater(row, col - 1, map);
-            boolean right = isWater(row, col + 1, map);
+            boolean up = isWater(x, y - 1, map);
+            boolean down = isWater(x, y + 1, map);
+            boolean left = isWater(x - 1, y, map);
+            boolean right = isWater(x + 1, y, map);
             texture = assetManager.getContextualWater(up, down, left, right);
         } 
         else if (terrainType == TerrainType.PLAIN || terrainType == TerrainType.CITY || terrainType == TerrainType.FACTORY || terrainType == TerrainType.HQ) {
-            texture = assetManager.getGrassVariation(col, row);
+            texture = assetManager.getGrassVariation(y, x);
         } 
         else {
             texture = assetManager.getTerrain(terrainType);

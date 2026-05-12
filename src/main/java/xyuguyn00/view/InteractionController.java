@@ -4,6 +4,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.input.MouseEvent;
 import xyuguyn00.common.Position;
 import xyuguyn00.common.Result;
+import xyuguyn00.common.enums.BuildingType;
 import xyuguyn00.common.enums.GameActionType;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
@@ -22,6 +23,7 @@ public class InteractionController {
     private final GameView view;
     private final ActionValidationService validationService;
     private final ActionMenuFactory actionMenuFactory;
+    private final FactoryMenuFactory factoryMenuFactory;
 
     private InputState currentState;
     private ContextMenu activeMenu = null;
@@ -32,6 +34,7 @@ public class InteractionController {
         this.view = view;
         this.validationService = new ActionValidationService(game);
         this.actionMenuFactory = new ActionMenuFactory();
+        this.factoryMenuFactory = new FactoryMenuFactory();
         this.currentState = new IdleState();
     }
 
@@ -74,6 +77,25 @@ public class InteractionController {
         clearSelection();
     }
 
+    private void openFactoryMenu(Position pos, double x, double y) {
+        activeMenu = factoryMenuFactory.createFactoryMenu(
+                game::getUnitCost,
+                type -> game.getPlayerFunds(game.getCurrentPlayer()) < game.getUnitCost(type)
+                        || game.getUnitAt(pos) != null,
+                type -> {
+                    dispatchAction(
+                        GameActionDto.builder(GameActionType.PURCHASE)
+                                .to(pos)
+                                .unitType(type)
+                                .build()
+                    );
+                }
+        );
+
+        activeMenu.setOnHidden(e -> clearSelection());
+        activeMenu.show(view, x, y); 
+    }
+
     private void openActionMenu(Position from, Position to, double x, double y) {
         AvailableActionsDto actions = validationService.getAvailableActions(from, to);
         Building targetBuilding = game.getBuildingAt(to);
@@ -113,9 +135,18 @@ public class InteractionController {
         @Override
         public void handleTileClick(Position pos, MouseEvent event) {
             Unit unit = game.getUnitAt(pos);
+            Building building = game.getBuildingAt(pos);
+
             if (unit != null && unit.getPlayer().equals(game.getCurrentPlayer()) && !unit.hasMoved()) {
                 currentState = new UnitSelectedState(pos);
                 view.requestRender();
+            } 
+            else if (building != null 
+                    && building.getType() == BuildingType.FACTORY 
+                    && building.getOwner().equals(game.getCurrentPlayer())
+                    && unit == null) { // Can't build if a unit is standing on the factory
+                
+                openFactoryMenu(pos, event.getScreenX(), event.getScreenY());
             }
         }
 
