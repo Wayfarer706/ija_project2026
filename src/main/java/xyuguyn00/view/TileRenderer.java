@@ -102,52 +102,50 @@ public class TileRenderer {
         }
 
         ImageView unitView = new ImageView(unitImage);
-        unitView.setFitWidth(tileSize - 10); 
-        unitView.setFitHeight(tileSize - 10);
+        unitView.setFitWidth(ViewConstants.UNIT_SIZE); 
+        unitView.setFitHeight(ViewConstants.UNIT_SIZE);
         unitView.setSmooth(false);
         nodes.add(unitView);
 
-        // CP Badge (Top Left) - Only shows if capturing is in progress
+        // CP Badge (Top Left)
         if (buildingOnTile != null && buildingOnTile.getCapturePoints() < 20) {
             StackPane cpBadge = new StackPane();
             
-            Rectangle cpBg = new Rectangle(24, 14, Color.rgb(0, 100, 200, 0.85)); // Solid blue background
+            Rectangle cpBg = new Rectangle(ViewConstants.CP_BADGE_WIDTH, ViewConstants.CP_BADGE_HEIGHT, Color.rgb(0, 100, 200, 0.85)); 
             cpBg.setArcWidth(4); 
             cpBg.setArcHeight(4);
             cpBg.setStroke(Color.WHITE);
             cpBg.setStrokeWidth(1);
 
             Text cpLabel = new Text("C:" + buildingOnTile.getCapturePoints());
-            cpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+            cpLabel.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_BADGE));
             cpLabel.setFill(Color.WHITE);
 
             cpBadge.getChildren().addAll(cpBg, cpLabel);
             
-            // Push to the top-left corner of the tile
-            cpBadge.setTranslateX(-tileSize / 2.0 + 14);
-            cpBadge.setTranslateY(-tileSize / 2.0 + 9);
+            cpBadge.setTranslateX(ViewConstants.CP_OFFSET_X);
+            cpBadge.setTranslateY(ViewConstants.CP_OFFSET_Y);
             
             nodes.add(cpBadge);
         }
 
-        // HP Badge 
+        // HP Badge (Bottom Right)
         StackPane hpBadge = new StackPane();
         
-        Rectangle hpBg = new Rectangle(22, 14, Color.rgb(0, 0, 0, 0.75)); // Dark background
+        Rectangle hpBg = new Rectangle(ViewConstants.HP_BADGE_WIDTH, ViewConstants.HP_BADGE_HEIGHT, Color.rgb(0, 0, 0, 0.75)); 
         hpBg.setArcWidth(4);
         hpBg.setArcHeight(4);
 
         Text hpLabel = new Text(String.valueOf(unit.getHp()));
-        hpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+        hpLabel.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_BADGE));
         
-        // Color coding the text based on health status
         if (unit.getHp() > 50) {
             hpLabel.setFill(Color.LIGHTGREEN);
         } else if (unit.getHp() > 20) {
             hpLabel.setFill(Color.YELLOW);
         } else {
             hpLabel.setFill(Color.RED);
-            hpBg.setStroke(Color.RED); 
+            hpBg.setStroke(Color.RED);
             hpBg.setStrokeWidth(1);
         }
 
@@ -157,9 +155,8 @@ public class TileRenderer {
 
         hpBadge.getChildren().addAll(hpBg, hpLabel);
         
-        // Push to the bottom-right corner of the tile
-        hpBadge.setTranslateX(tileSize / 2.0 - 13);
-        hpBadge.setTranslateY(tileSize / 2.0 - 9);
+        hpBadge.setTranslateX(ViewConstants.HP_OFFSET_X);
+        hpBadge.setTranslateY(ViewConstants.HP_OFFSET_Y);
 
         nodes.add(hpBadge);
 
@@ -167,7 +164,7 @@ public class TileRenderer {
     }
 
     public Circle createPathDot() {
-        Circle dot = new Circle(tileSize / 6.0, Color.WHITE);
+        Circle dot = new Circle(ViewConstants.PATH_DOT_RADIUS, Color.WHITE);
         dot.setOpacity(0.8);
         return dot;
     }

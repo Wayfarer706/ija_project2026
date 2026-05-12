@@ -11,7 +11,6 @@ import xyuguyn00.tool.GameObserver;
 
 public class GameView extends GridPane implements GameObserver {
     private final Game game;
-    private final int tileSize = 60; 
     private final TileRenderer tileRenderer;
     private final GameBoardView boardView;
     
@@ -24,7 +23,7 @@ public class GameView extends GridPane implements GameObserver {
         this.game.addObserver(this); 
         this.setStyle("-fx-alignment: center; -fx-padding: 20; -fx-background-color: #2F4F4F;");
         
-        this.tileRenderer = new TileRenderer(tileSize, assetManager);
+        this.tileRenderer = new TileRenderer(ViewConstants.TILE_SIZE, assetManager);
         this.boardView = new GameBoardView(game, tileRenderer);
         
         this.interactionController = new InteractionController(game, dispatcher, this);
