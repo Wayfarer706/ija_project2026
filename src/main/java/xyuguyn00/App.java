@@ -31,6 +31,7 @@ public class App extends Application {
     private Stage primaryStage;
     private boolean isPaused = false; 
     private boolean isGameActive = false;
+    private String currentMapFile = "game_stats.json"; 
 
     @Override
     public void start(Stage primaryStage) {
@@ -48,7 +49,7 @@ public class App extends Application {
         primaryStage.show();
     }
 
-    private void startGame(GameMode mode) {
+    private void startGame(GameMode mode, String mapFile) {
         try {
             isGameActive = true; 
 
@@ -56,8 +57,8 @@ public class App extends Application {
             assetManager.loadAssets();
             
             Game game = GameFactory.createGame(
-                "data/game_stats.json", 
-                "data/terrain.tsv", 
+                "data/" + mapFile,
+                "data/terrain.tsv",
                 "data/units.tsv",
                 "data/units-damage.tsv"
             );
@@ -88,7 +89,7 @@ public class App extends Application {
             // Wrap the game layout in a StackPane so we can overlay the win screen
             StackPane rootPane = new StackPane(gameLayout);
 
-            Scene gameScene = new Scene(rootPane, 1000, 600);
+            Scene gameScene = new Scene(rootPane, 1200, 900);
             primaryStage.setScene(gameScene);
 
             // Global observer to catch the end-game trigger
@@ -127,7 +128,7 @@ public class App extends Application {
         Button retryBtn = new Button("Retry");
         retryBtn.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         retryBtn.setPrefWidth(220);
-        retryBtn.setOnAction(e -> startGame(mode));
+        retryBtn.setOnAction(e -> startGame(mode, currentMapFile));
 
         Button menuBtn = new Button("Main Menu");
         menuBtn.setFont(Font.font("Arial", FontWeight.BOLD, 18));
