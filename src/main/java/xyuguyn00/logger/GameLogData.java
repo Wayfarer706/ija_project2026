@@ -1,4 +1,4 @@
-package xyuguyn00.log;
+package xyuguyn00.logger;
 
 import java.util.List;
 
