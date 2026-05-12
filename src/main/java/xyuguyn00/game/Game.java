@@ -143,7 +143,7 @@ public class Game implements Observable {
             
             // Check Win Condition
             if (building.getType() == BuildingType.HQ) {
-                System.out.println(unit.getPlayer() + " WINS THE GAME!");
+            fireGameEvent(null, "GAME_OVER:" + unit.getPlayer().label());
             }
         }
 

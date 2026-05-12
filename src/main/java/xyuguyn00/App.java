@@ -3,13 +3,18 @@ package xyuguyn00;
 import java.nio.file.Path;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import xyuguyn00.bot.DummyBot;
 import xyuguyn00.common.enums.GameMode;
@@ -45,8 +50,8 @@ public class App extends Application {
 
     private void startGame(GameMode mode) {
         try {
-            isGameActive = true;
-
+            isGameActive = true; 
+            
             Game game = GameFactory.createGame(
                 "data/game_stats.json", 
                 "data/terrain.tsv", 
@@ -60,28 +65,36 @@ public class App extends Application {
             
             GameActionDispatcher dispatcher = GameActionDispatcher.createDefault(game, logService, logPath);
 
-            BorderPane root = new BorderPane();
+            BorderPane gameLayout = new BorderPane();
             GameView boardView = new GameView(game, dispatcher); 
 
-            // Define the pause toggle behavior
             Runnable togglePause = () -> {
                 isPaused = !isPaused;
                 if (!isPaused) {
-                    // Manually fire an event to kickstart the bot loop again
                     game.fireGameEvent(null, "Resume");
                 }
             };
 
-            // Pass the mode and the toggle callback to the sidebar
             PlayerSidebar sidebar = new PlayerSidebar(game, dispatcher, logService, logPath, boardView, mode, togglePause);
             HBox topBar = createTopBar();
 
-            root.setTop(topBar);
-            root.setLeft(sidebar);
-            root.setCenter(boardView);
+            gameLayout.setTop(topBar);
+            gameLayout.setLeft(sidebar);
+            gameLayout.setCenter(boardView);
 
-            Scene gameScene = new Scene(root, 1000, 600);
+            // Wrap the game layout in a StackPane so we can overlay the win screen
+            StackPane rootPane = new StackPane(gameLayout);
+
+            Scene gameScene = new Scene(rootPane, 1000, 600);
             primaryStage.setScene(gameScene);
+
+            // Global observer to catch the end-game trigger
+            game.addObserver(event -> {
+                if (event.getMessage() != null && event.getMessage().startsWith("GAME_OVER:")) {
+                    String winner = event.getMessage().split(":")[1];
+                    showGameOverOverlay(rootPane, winner, mode);
+                }
+            });
 
             attachBots(mode, game, dispatcher, logService);
 
@@ -90,6 +103,36 @@ public class App extends Application {
             e.printStackTrace();
             showMainMenu(); 
         }
+    }
+
+    private void showGameOverOverlay(StackPane rootPane, String winner, GameMode mode) {
+        // Kill the game loop to prevent any remaining bots from acting
+        isGameActive = false; 
+
+        VBox overlay = new VBox(20);
+        overlay.setAlignment(Pos.CENTER);
+        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
+
+        Text title = new Text("Game Over");
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 48));
+        title.setFill(Color.WHITE);
+
+        Text subtitle = new Text(winner + " Wins!");
+        subtitle.setFont(Font.font("Arial", FontWeight.BOLD, 32));
+        subtitle.setFill(Color.GOLD);
+
+        Button retryBtn = new Button("Retry");
+        retryBtn.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        retryBtn.setPrefWidth(220);
+        retryBtn.setOnAction(e -> startGame(mode));
+
+        Button menuBtn = new Button("Main Menu");
+        menuBtn.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        menuBtn.setPrefWidth(220);
+        menuBtn.setOnAction(e -> showMainMenu());
+
+        overlay.getChildren().addAll(title, subtitle, retryBtn, menuBtn);
+        rootPane.getChildren().add(overlay);
     }
 
     private HBox createTopBar() {
