@@ -2,9 +2,14 @@ package xyuguyn00;
 
 import java.nio.file.Path;
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import xyuguyn00.bot.DummyBot;
 import xyuguyn00.common.enums.GameMode;
@@ -19,7 +24,8 @@ import javafx.util.Duration;
 
 public class App extends Application {
     private Stage primaryStage;
-    private boolean isPaused = false; // Tracks the spectator pause state
+    private boolean isPaused = false; 
+    private boolean isGameActive = false;
 
     @Override
     public void start(Stage primaryStage) {
@@ -29,6 +35,8 @@ public class App extends Application {
     }
 
     private void showMainMenu() {
+        isGameActive = false;
+        isPaused = false;
         MainMenuView mainMenu = new MainMenuView(this::startGame);
         Scene scene = new Scene(mainMenu, 1000, 600);
         primaryStage.setScene(scene);
@@ -37,6 +45,8 @@ public class App extends Application {
 
     private void startGame(GameMode mode) {
         try {
+            isGameActive = true;
+
             Game game = GameFactory.createGame(
                 "data/game_stats.json", 
                 "data/terrain.tsv", 
@@ -64,7 +74,9 @@ public class App extends Application {
 
             // Pass the mode and the toggle callback to the sidebar
             PlayerSidebar sidebar = new PlayerSidebar(game, dispatcher, logService, logPath, boardView, mode, togglePause);
+            HBox topBar = createTopBar();
 
+            root.setTop(topBar);
             root.setLeft(sidebar);
             root.setCenter(boardView);
 
@@ -80,6 +92,20 @@ public class App extends Application {
         }
     }
 
+    private HBox createTopBar() {
+        Button returnBtn = new Button("⬅ Return to Main Menu");
+        returnBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        returnBtn.setStyle("-fx-background-color: #8b0000; -fx-text-fill: white;");
+        
+        // Destroys the current game state and brings back the menu
+        returnBtn.setOnAction(e -> showMainMenu());
+
+        HBox topBar = new HBox(returnBtn);
+        topBar.setPadding(new Insets(10, 20, 10, 20));
+        topBar.setStyle("-fx-background-color: #1e1e1e; -fx-border-color: #3c3c3c; -fx-border-width: 0 0 2 0;");
+        return topBar;
+    }
+
     private void attachBots(GameMode mode, Game game, GameActionDispatcher dispatcher, GameLogService logService) {
         if (mode == GameMode.PLAYER_VS_PLAYER) {
             return; 
@@ -89,6 +115,7 @@ public class App extends Application {
         
         if (mode == GameMode.PLAYER_VS_BOT) {
             game.addObserver(event -> {
+                if (!isGameActive) return;
                 if (game.getCurrentPlayer() == PlayerId.PLAYER_2 && logService.isAtLatestState()) {
                     triggerBotTurn(bot2);
                 }
@@ -98,8 +125,7 @@ public class App extends Application {
             DummyBot bot1 = new DummyBot(game, dispatcher, PlayerId.PLAYER_1);
             
             game.addObserver(event -> {
-                // If we are rewinding history OR the user clicked Pause, stop the bots.
-                if (!logService.isAtLatestState() || isPaused) {
+                if (!isGameActive || !logService.isAtLatestState() || isPaused) {
                     return; 
                 }
 
@@ -116,7 +142,11 @@ public class App extends Application {
 
     private void triggerBotTurn(DummyBot bot) {
         PauseTransition delay = new PauseTransition(Duration.seconds(0.8));
-        delay.setOnFinished(e -> bot.playTurn());
+        delay.setOnFinished(e -> {
+            if (isGameActive) {
+                bot.playTurn();
+            }
+        });
         delay.play();
     }
 
