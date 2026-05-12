@@ -1,4 +1,4 @@
-package xyuguyn00.view;
+package xyuguyn00.view.scene;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;

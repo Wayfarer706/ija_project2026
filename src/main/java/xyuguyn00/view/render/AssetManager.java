@@ -1,4 +1,4 @@
-package xyuguyn00.view;
+package xyuguyn00.view.render;
 
 import javafx.scene.image.Image;
 import xyuguyn00.common.enums.BuildingType;

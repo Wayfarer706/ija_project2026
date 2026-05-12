@@ -23,7 +23,10 @@ import xyuguyn00.game.Game;
 import xyuguyn00.game.GameFactory;
 import xyuguyn00.handler.GameActionDispatcher;
 import xyuguyn00.service.GameLogService;
-import xyuguyn00.view.*;
+import xyuguyn00.view.render.AssetManager;
+import xyuguyn00.view.scene.GameView;
+import xyuguyn00.view.scene.MainMenuView;
+import xyuguyn00.view.scene.PlayerSidebar;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
 
@@ -140,7 +143,7 @@ public class App extends Application {
     }
 
     private HBox createTopBar() {
-        Button returnBtn = new Button("⬅ Return to Main Menu");
+        Button returnBtn = new Button("⬅ Main Menu");
         returnBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         returnBtn.setStyle("-fx-background-color: #8b0000; -fx-text-fill: white;");
         

@@ -1,4 +1,4 @@
-package xyuguyn00.view;
+package xyuguyn00.view.state;
 
 import xyuguyn00.common.Position;
 

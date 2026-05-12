@@ -1,4 +1,4 @@
-package xyuguyn00.view;
+package xyuguyn00.view.menu;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;

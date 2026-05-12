@@ -1,4 +1,4 @@
-package xyuguyn00.view;
+package xyuguyn00.view.control;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.input.MouseEvent;
@@ -13,6 +13,10 @@ import xyuguyn00.handler.GameActionDispatcher;
 import xyuguyn00.model.AvailableActionsDto;
 import xyuguyn00.model.GameActionDto;
 import xyuguyn00.service.ActionValidationService;
+import xyuguyn00.view.menu.ActionMenuFactory;
+import xyuguyn00.view.menu.FactoryMenuFactory;
+import xyuguyn00.view.scene.GameView;
+import xyuguyn00.view.state.BoardViewState;
 
 import java.util.ArrayList;
 import java.util.List;

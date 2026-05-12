@@ -1,4 +1,4 @@
-package xyuguyn00.view;
+package xyuguyn00.view.scene;
 
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
@@ -10,6 +10,8 @@ import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
+import xyuguyn00.view.render.TileRenderer;
+import xyuguyn00.view.state.BoardViewState;
 
 import java.util.List;
 import java.util.function.BiConsumer;

@@ -1,4 +1,4 @@
-package xyuguyn00.view;
+package xyuguyn00.view.menu;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -27,7 +27,7 @@ public class FactoryMenuFactory {
             
             menu.getItems().add(item);
         }
-        
+
         menu.getItems().add(MenuUtils.createMenuItem("Cancel", menu::hide));
 
         return menu;

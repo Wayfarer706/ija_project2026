@@ -1,4 +1,4 @@
-package xyuguyn00.view;
+package xyuguyn00.view.scene;
 
 import java.nio.file.Path;
 

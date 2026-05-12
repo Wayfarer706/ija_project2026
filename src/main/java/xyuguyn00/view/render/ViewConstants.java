@@ -1,4 +1,4 @@
-package xyuguyn00.view;
+package xyuguyn00.view.render;
 
 public final class ViewConstants {
     

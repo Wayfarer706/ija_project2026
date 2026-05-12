@@ -1,4 +1,4 @@
-package xyuguyn00.view;
+package xyuguyn00.view.scene;
 
 import javafx.application.Platform;
 import javafx.scene.input.MouseEvent;
@@ -8,6 +8,10 @@ import xyuguyn00.common.Position;
 import xyuguyn00.game.Game;
 import xyuguyn00.handler.GameActionDispatcher;
 import xyuguyn00.tool.GameObserver;
+import xyuguyn00.view.control.InteractionController;
+import xyuguyn00.view.render.AssetManager;
+import xyuguyn00.view.render.TileRenderer;
+import xyuguyn00.view.render.ViewConstants;
 
 public class GameView extends GridPane implements GameObserver {
     private final Game game;
