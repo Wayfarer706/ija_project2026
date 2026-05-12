@@ -13,6 +13,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import xyuguyn00.common.GameEvent;
 import xyuguyn00.common.enums.GameActionType;
+import xyuguyn00.common.enums.GameMode;
 import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.game.Game;
 import xyuguyn00.handler.GameActionDispatcher;
@@ -20,9 +21,6 @@ import xyuguyn00.model.GameActionDto;
 import xyuguyn00.service.GameLogService;
 import xyuguyn00.tool.GameObserver;
 
-/**
- * The sidebar UI displaying player stats and turn controls.
- */
 public class PlayerSidebar extends VBox implements GameObserver {
     private final Game game;
     private final VBox player1Card;
@@ -38,11 +36,10 @@ public class PlayerSidebar extends VBox implements GameObserver {
     private final Button nextBtn;
     private final Button playFromHereBtn;
     
-    // Hold references to the text fields so we can update them
     private final Text p1GoldText;
     private final Text p2GoldText;
 
-    public PlayerSidebar(Game game, GameActionDispatcher dispatcher, GameLogService logService, Path logPath, GameView gameView) {
+    public PlayerSidebar(Game game, GameActionDispatcher dispatcher, GameLogService logService, Path logPath, GameView gameView, GameMode mode, Runnable onTogglePause) {
         this.game = game;
         this.game.addObserver(this);
         this.dispatcher = dispatcher;
@@ -56,7 +53,6 @@ public class PlayerSidebar extends VBox implements GameObserver {
         this.setStyle("-fx-background-color: #2b2b2b;"); 
         this.setPrefWidth(200);
 
-        // Initialize UI Elements
         p1GoldText = new Text("Gold: 0");
         p1GoldText.setFill(Color.GOLD);
         p1GoldText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
@@ -92,6 +88,7 @@ public class PlayerSidebar extends VBox implements GameObserver {
                 this.logService.save(this.logPath);
                 this.gameView.setReplayMode(false);
                 updateReplayControls();
+                this.game.fireGameEvent(null, "Timeline Resumed");
             } catch (Exception ex) {
                 showError("Could not continue game", ex.getMessage());
             }
@@ -111,16 +108,36 @@ public class PlayerSidebar extends VBox implements GameObserver {
             updateReplayControls();
         });
 
-        this.getChildren().addAll(
-            player1Card,
-            player2Card,
-            endTurnBtn,
-            backBtn,
-            nextBtn,
-            playFromHereBtn
-        );
+        // Conditionally render the UI based on the Game Mode
+        if (mode == GameMode.BOT_VS_BOT) {
+            Button pauseResumeBtn = new Button("Pause");
+            pauseResumeBtn.setMaxWidth(Double.MAX_VALUE);
+            pauseResumeBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            
+            pauseResumeBtn.setOnAction(e -> {
+                if (pauseResumeBtn.getText().equals("Pause")) {
+                    pauseResumeBtn.setText("Resume");
+                } else {
+                    pauseResumeBtn.setText("Pause");
+                }
+                
+                if (onTogglePause != null) {
+                    onTogglePause.run();
+                }
+            });
+            
+            this.getChildren().addAll(player1Card, player2Card, pauseResumeBtn);
+        } else {
+            this.getChildren().addAll(
+                player1Card,
+                player2Card,
+                endTurnBtn,
+                backBtn,
+                nextBtn,
+                playFromHereBtn
+            );
+        }
         
-        // Set initial visual state
         updateSidebarState();
         updateReplayControls();
     }
@@ -142,7 +159,6 @@ public class PlayerSidebar extends VBox implements GameObserver {
         String activeBorder = "-fx-border-color: gold; -fx-border-width: 3; -fx-border-radius: 5; -fx-background-color: #3c3c3c; -fx-background-radius: 5;";
         String inactiveBorder = "-fx-border-color: gray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #3c3c3c; -fx-background-radius: 5;";
 
-        // Update active player highlight
         if (game.getCurrentPlayer() == PlayerId.PLAYER_1) {
             player1Card.setStyle(activeBorder);
             player2Card.setStyle(inactiveBorder);
@@ -151,7 +167,6 @@ public class PlayerSidebar extends VBox implements GameObserver {
             player2Card.setStyle(activeBorder);
         }
         
-        // Update Gold Counters dynamically from the engine
         p1GoldText.setText("Gold: " + game.getPlayerFunds(PlayerId.PLAYER_1));
         p2GoldText.setText("Gold: " + game.getPlayerFunds(PlayerId.PLAYER_2));
     }
@@ -172,7 +187,6 @@ public class PlayerSidebar extends VBox implements GameObserver {
         backBtn.setDisable(!canGoBack);
         nextBtn.setDisable(!canGoNext);
         playFromHereBtn.setDisable(!isInHistory);
-
         endTurnBtn.setDisable(isInHistory);
 
         this.gameView.setReplayMode(isInHistory);

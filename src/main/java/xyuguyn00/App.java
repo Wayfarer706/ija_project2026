@@ -1,26 +1,41 @@
 package xyuguyn00;
 
 import java.nio.file.Path;
-
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import xyuguyn00.bot.DummyBot;
+import xyuguyn00.common.enums.GameMode;
+import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.GameFactory;
 import xyuguyn00.handler.GameActionDispatcher;
 import xyuguyn00.service.GameLogService;
 import xyuguyn00.view.*;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 
-/**
- * The main entry point for the JavaFX GUI application.
- * Bootstraps the game engine and initializes the primary window.
- */
 public class App extends Application {
+    private Stage primaryStage;
+    private boolean isPaused = false; // Tracks the spectator pause state
 
     @Override
     public void start(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+        this.primaryStage.setTitle("Strategy Game");
+        showMainMenu();
+    }
+
+    private void showMainMenu() {
+        MainMenuView mainMenu = new MainMenuView(this::startGame);
+        Scene scene = new Scene(mainMenu, 1000, 600);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    private void startGame(GameMode mode) {
         try {
             Game game = GameFactory.createGame(
                 "data/game_stats.json", 
@@ -30,34 +45,81 @@ public class App extends Application {
             );
 
             Path logPath = Path.of("game-log.json");
-
             GameLogService logService = new GameLogService();
             logService.startNewLog(game);
-            logService.save(logPath);
-
+            
             GameActionDispatcher dispatcher = GameActionDispatcher.createDefault(game, logService, logPath);
 
             BorderPane root = new BorderPane();
             GameView boardView = new GameView(game, dispatcher); 
-            PlayerSidebar sidebar = new PlayerSidebar(game, dispatcher, logService, logPath, boardView);
+
+            // Define the pause toggle behavior
+            Runnable togglePause = () -> {
+                isPaused = !isPaused;
+                if (!isPaused) {
+                    // Manually fire an event to kickstart the bot loop again
+                    game.fireGameEvent(null, "Resume");
+                }
+            };
+
+            // Pass the mode and the toggle callback to the sidebar
+            PlayerSidebar sidebar = new PlayerSidebar(game, dispatcher, logService, logPath, boardView, mode, togglePause);
 
             root.setLeft(sidebar);
             root.setCenter(boardView);
 
-            Scene scene = new Scene(root, 1000, 600); 
-            primaryStage.setTitle("Strategy Game");
-            primaryStage.setScene(scene);
-            primaryStage.show();
+            Scene gameScene = new Scene(root, 1000, 600);
+            primaryStage.setScene(gameScene);
+
+            attachBots(mode, game, dispatcher, logService);
 
         } catch (Exception e) {
             showFatalError("Initialization Failed", "Could not load game data:\n" + e.getMessage());
             e.printStackTrace();
+            showMainMenu(); 
         }
     }
 
-    /**
-     * Displays a blocking error dialog to the user.
-     */
+    private void attachBots(GameMode mode, Game game, GameActionDispatcher dispatcher, GameLogService logService) {
+        if (mode == GameMode.PLAYER_VS_PLAYER) {
+            return; 
+        }
+
+        DummyBot bot2 = new DummyBot(game, dispatcher, PlayerId.PLAYER_2);
+        
+        if (mode == GameMode.PLAYER_VS_BOT) {
+            game.addObserver(event -> {
+                if (game.getCurrentPlayer() == PlayerId.PLAYER_2 && logService.isAtLatestState()) {
+                    triggerBotTurn(bot2);
+                }
+            });
+        } 
+        else if (mode == GameMode.BOT_VS_BOT) {
+            DummyBot bot1 = new DummyBot(game, dispatcher, PlayerId.PLAYER_1);
+            
+            game.addObserver(event -> {
+                // If we are rewinding history OR the user clicked Pause, stop the bots.
+                if (!logService.isAtLatestState() || isPaused) {
+                    return; 
+                }
+
+                if (game.getCurrentPlayer() == PlayerId.PLAYER_1) {
+                    triggerBotTurn(bot1);
+                } else if (game.getCurrentPlayer() == PlayerId.PLAYER_2) {
+                    triggerBotTurn(bot2);
+                }
+            });
+
+            triggerBotTurn(bot1);
+        }
+    }
+
+    private void triggerBotTurn(DummyBot bot) {
+        PauseTransition delay = new PauseTransition(Duration.seconds(0.8));
+        delay.setOnFinished(e -> bot.playTurn());
+        delay.play();
+    }
+
     private void showFatalError(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
