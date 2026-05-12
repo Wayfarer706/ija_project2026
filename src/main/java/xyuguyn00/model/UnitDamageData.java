@@ -1,11 +1,13 @@
 package xyuguyn00.model;
 
+import xyuguyn00.common.enums.UnitType;
+
 /**
  * Immutable record representing the combat damage matrix.
  * Defines the base damage an attacking unit deals to a defending unit.
  */
 public record UnitDamageData (
-    String attacker,
-    String defender,
+    UnitType attacker,
+    UnitType defender,
     int damage
 ) {}

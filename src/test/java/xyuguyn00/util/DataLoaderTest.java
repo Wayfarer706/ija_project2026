@@ -5,7 +5,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import xyuguyn00.model.*;
+import xyuguyn00.common.enums.MovementType;
+import xyuguyn00.common.enums.TerrainType;
+import xyuguyn00.common.enums.UnitType;
+import xyuguyn00.model.TerrainData;
+import xyuguyn00.model.UnitDamageData;
+import xyuguyn00.model.UnitData;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,16 +28,17 @@ public class DataLoaderTest {
                          "Hora (Mountain)\t4\t2\tNeprůjezdné\tVýborná obrana.";
         Files.writeString(file, content);
 
-        Map<String, TerrainData> result = DataLoader.loadTerrain(file.toString());
+        Map<TerrainType, TerrainData> result = DataLoader.loadTerrain(file.toString());
 
         Assertions.assertEquals(2, result.size());
-        
-        TerrainData mountain = result.get("Hora");
+
+        TerrainData mountain = result.get(TerrainType.MOUNTAIN);
         Assertions.assertNotNull(mountain);
         Assertions.assertEquals(4, mountain.defenseBonus());
         Assertions.assertEquals(2, mountain.infantryCost());
+
         // Verify that the parser correctly translates text like "Neprůjezdné" into -1
-        Assertions.assertEquals(-1, mountain.vehicleCost()); 
+        Assertions.assertEquals(-1, mountain.vehicleCost());
     }
 
     @Test
@@ -44,15 +50,16 @@ public class DataLoaderTest {
                          "Tank\t7 000\tVozidlo\t6\t1 (Na blízko)";
         Files.writeString(file, content);
 
-        Map<String, UnitData> result = DataLoader.loadUnits(file.toString());
+        Map<UnitType, UnitData> result = DataLoader.loadUnits(file.toString());
 
         Assertions.assertEquals(2, result.size());
-        
-        UnitData tank = result.get("Tank");
+
+        UnitData tank = result.get(UnitType.TANK);
         Assertions.assertNotNull(tank);
+
         // Verify that "7 000" was properly stripped of spaces and parsed as an integer
         Assertions.assertEquals(7000, tank.cost());
-        Assertions.assertEquals("Vozidlo", tank.movementType());
+        Assertions.assertEquals(MovementType.VEHICLE, tank.movementType());
         Assertions.assertEquals(6, tank.movementRange());
     }
 
@@ -68,10 +75,10 @@ public class DataLoaderTest {
         List<UnitDamageData> result = DataLoader.loadDamage(file.toString());
 
         Assertions.assertEquals(2, result.size());
-        
+
         UnitDamageData firstRule = result.get(0);
-        Assertions.assertEquals("Pěchota", firstRule.attacker());
-        Assertions.assertEquals("Tank", firstRule.defender());
+        Assertions.assertEquals(UnitType.INFANTRY, firstRule.attacker());
+        Assertions.assertEquals(UnitType.TANK, firstRule.defender());
         Assertions.assertEquals(5, firstRule.damage());
     }
 }

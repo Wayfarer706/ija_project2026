@@ -1,9 +1,10 @@
 package xyuguyn00.game;
 
 import xyuguyn00.common.Position;
+import xyuguyn00.common.enums.PlayerId;
+import xyuguyn00.common.enums.UnitType;
 import xyuguyn00.model.UnitData;
 import xyuguyn00.model.TerrainData;
-import xyuguyn00.common.UnitType;
 
 /**
  * Represents an active entity on the game board.
@@ -12,67 +13,67 @@ import xyuguyn00.common.UnitType;
 public class Unit {
     private Position position;
     private final UnitData data;
-    private final String player;
-    private int hp = 100;            
-    private boolean hasMoved = false; // Track if the unit has already moved this turn
+    private final PlayerId player;
+    private int hp = 100;
+    private boolean hasMoved = false;
 
-    public Unit(UnitData data, String player, Position position) {
+    public Unit(UnitData data, PlayerId player, Position position) {
         this.data = data;
         this.player = player;
         this.position = position;
-        this.hp = 100; 
+        this.hp = 100;
     }
 
-    public Position getPosition() { 
-        return position; 
+    public Position getPosition() {
+        return position;
     }
 
-    public void setPosition(Position position) { 
-        this.position = position; 
+    public void setPosition(Position position) {
+        this.position = position;
     }
 
-    public String getType() { 
-        return data.unitName(); 
+    public String getDisplayName() {
+        return data.unitType().getCzechName();
     }
 
-    public String getPlayer() { 
-        return player; 
+    public UnitType getUnitType() {
+        return data.unitType();
     }
 
-    public int getHp() { 
-        return hp; 
+    public PlayerId getPlayer() {
+        return player;
     }
 
-    public int getMaxMove() { 
-        return data.movementRange(); 
+    public int getHp() {
+        return hp;
     }
 
-    public String getMovementType() { 
-        return data.movementType(); 
+    public int getMaxMove() {
+        return data.movementRange();
     }
 
-    public int getMinAttackRange() { 
-        return data.minAttackRange(); 
+    public int getMinAttackRange() {
+        return data.minAttackRange();
     }
 
-    public int getMaxAttackRange() { 
-        return data.maxAttackRange(); 
+    public int getMaxAttackRange() {
+        return data.maxAttackRange();
     }
 
-    public int getBaseCost() { 
-        return data.cost(); 
+    public int getBaseCost() {
+        return data.cost();
     }
 
-    public boolean hasMoved() { 
-        return hasMoved; 
+    public boolean hasMoved() {
+        return hasMoved;
     }
 
-    public void setMoved(boolean moved) { 
-        this.hasMoved = moved; 
+    public void setMoved(boolean moved) {
+        this.hasMoved = moved;
     }
 
-    public boolean isDead() { 
-        return hp <= 0; 
+    public boolean isDead() {
+        return hp <= 0;
     }
 
     public void takeDamage(int points) {
@@ -85,27 +86,35 @@ public class Unit {
         if (this.hp > 100) this.hp = 100;
     }
 
-    /**
-     * Calculates the cost to enter a tile dynamically based on the unit's movement type
-     * (e.g., Pěší vs Vozidlo) and the specific terrain's rules.
-     */
     public int getTerrainCost(TerrainData terrain) {
-        if (terrain == null) return -1;
-        
-        if ("Vozidlo".equals(this.data.movementType())) {
-            return terrain.vehicleCost();
-        } else if ("Pěší".equals(this.data.movementType())) {
-            return terrain.infantryCost();
+        if (terrain == null) {
+            return -1;
         }
-        return -1; // Unknown movement type or impassable
+
+        return switch (data.movementType()) {
+            case VEHICLE -> terrain.vehicleCost();
+            case INFANTRY -> terrain.infantryCost();
+        };
     }
 
-    public UnitType getUnitType() {
-        return UnitType.fromCzechName(data.unitName());
+    public void setHp(int hp) {
+        if (hp < 0) {
+            this.hp = 0;
+        } else if (hp > 100) {
+            this.hp = 100;
+        } else {
+            this.hp = hp;
+        }
     }
 
     @Override
     public String toString() {
-        return String.format("{%s[%d, %d][%d]}", data.unitName(), position.getX(), position.getY(), hp);
+        return String.format(
+            "{%s[%d, %d][%d]}",
+            getDisplayName(),
+            position.getX(),
+            position.getY(),
+            hp
+        );
     }
 }

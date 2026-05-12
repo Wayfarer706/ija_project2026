@@ -1,17 +1,19 @@
 package xyuguyn00.game;
 
 import xyuguyn00.common.Position;
+import xyuguyn00.common.enums.BuildingType;
+import xyuguyn00.common.enums.PlayerId;
 
 /**
  * Represents an interactive building on the board (City, Factory, HQ).
  */
 public class Building {
     private final Position position;
-    private final String type; 
-    private String owner; 
+    private final BuildingType type; 
+    private PlayerId owner; 
     private int capturePoints;
 
-    public Building(Position position, String type, String owner) {
+    public Building(Position position, BuildingType type, PlayerId owner) {
         this.position = position;
         this.type = type;
         this.owner = owner;
@@ -22,15 +24,15 @@ public class Building {
         return position; 
     }
 
-    public String getType() { 
+    public BuildingType getType() { 
         return type; 
     }
 
-    public String getOwner() { 
+    public PlayerId getOwner() { 
         return owner; 
     }
     
-    public void setOwner(String owner) { 
+    public void setOwner(PlayerId owner) { 
         this.owner = owner; 
     }
     
@@ -45,5 +47,15 @@ public class Building {
 
     public void resetCapturePoints() {
         this.capturePoints = 20;
+    }
+
+    public void setCapturePoints(int capturePoints) {
+        if (capturePoints < 0) {
+            this.capturePoints = 0;
+        } else if (capturePoints > 20) {
+            this.capturePoints = 20;
+        } else {
+            this.capturePoints = capturePoints;
+        }
     }
 }

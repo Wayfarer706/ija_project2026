@@ -1,9 +1,10 @@
-package xyuguyn00.dto;
+package xyuguyn00.common.enums;
 
 public enum GameActionType {
     MOVE,
     WAIT,
     ATTACK,
     CAPTURE,
-    PURCHASE
+    PURCHASE,
+    END_TURN
 }

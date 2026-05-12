@@ -1,7 +1,8 @@
-package xyuguyn00.dto;
+package xyuguyn00.model;
 
 import xyuguyn00.common.Position;
-import xyuguyn00.common.UnitType;
+import xyuguyn00.common.enums.GameActionType;
+import xyuguyn00.common.enums.UnitType;
 
 public class GameActionDto {
     private final GameActionType type;

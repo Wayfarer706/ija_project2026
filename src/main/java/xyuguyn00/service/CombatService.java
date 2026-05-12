@@ -4,28 +4,19 @@ import java.util.List;
 import java.util.Map;
 
 import xyuguyn00.common.Position;
+import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.game.Unit;
 import xyuguyn00.model.TerrainData;
 import xyuguyn00.model.UnitDamageData;
 
 public class CombatService {
     private final String[] mapDefinition;
-    private final Map<String, TerrainData> terrainRules;
+    private final Map<TerrainType, TerrainData> terrainRules;
     private final List<UnitDamageData> damageRules;
-
-    private static final Map<Character, String> TERRAIN_CHAR_MAP = Map.of(
-        'P', "Pláň",
-        'F', "Les",
-        'M', "Hora",
-        'W', "Voda",
-        'C', "Město",
-        'T', "Továrna",
-        'H', "Velitelství"
-    );
 
     public CombatService(
         String[] mapDefinition,
-        Map<String, TerrainData> terrainRules,
+        Map<TerrainType, TerrainData> terrainRules,
         List<UnitDamageData> damageRules
     ) {
         this.mapDefinition = mapDefinition;
@@ -88,7 +79,7 @@ public class CombatService {
 
     private int findBaseDamage(Unit attacker, Unit defender) {
         for (UnitDamageData rule : damageRules) {
-            if (rule.attacker().equals(attacker.getType()) && rule.defender().equals(defender.getType())) {
+            if (rule.attacker() == attacker.getUnitType() && rule.defender() == defender.getUnitType()) {
                 return rule.damage();
             }
         }
@@ -97,14 +88,8 @@ public class CombatService {
     }
 
     private int findDefenseBonus(Position position) {
-        char terrainChar = getTarrainAt(position.getX(), position.getY());
-        String terrainName = TERRAIN_CHAR_MAP.get(terrainChar);
-
-        if (terrainName == null) {
-            return 0;
-        }
-
-        TerrainData terrain = terrainRules.get(terrainName);
+        TerrainType terrainType = getTerrainAt(position.getX(), position.getY());
+        TerrainData terrain = terrainRules.get(terrainType);
 
         if (terrain == null) {
             return 0;
@@ -113,16 +98,16 @@ public class CombatService {
         return terrain.defenseBonus();
     }
 
-    private char getTarrainAt(int row, int col) {
+    private TerrainType getTerrainAt(int row, int col) {
         if (row >= 0 && row < mapDefinition.length) {
             String rowDefinition = mapDefinition[row].replace(" ", "");
 
             if (col >= 0 && col < rowDefinition.length()) {
-                return rowDefinition.charAt(col);
+                return TerrainType.fromSymbol(rowDefinition.charAt(col));
             }
         }
 
-        return '\0';
+        throw new IllegalArgumentException("Invalid terrain position: " + row + ", " + col);
     }
 
     private int getDistance(Position first, Position second) {

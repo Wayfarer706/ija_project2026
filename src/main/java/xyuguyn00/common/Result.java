@@ -14,10 +14,6 @@ public class Result {
         return new Result(true, null);
     }
 
-    public static Result success(String message) {
-        return new Result(true, message);
-    }
-
     public static Result failure(String errorMessage) {
         return new Result(false, errorMessage);
     }

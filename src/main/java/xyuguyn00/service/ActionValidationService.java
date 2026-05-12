@@ -5,11 +5,12 @@ import java.util.List;
 
 import xyuguyn00.common.Position;
 import xyuguyn00.common.Result;
-import xyuguyn00.common.UnitType;
-import xyuguyn00.dto.AvailableActionsDto;
+import xyuguyn00.common.enums.BuildingType;
+import xyuguyn00.common.enums.UnitType;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
+import xyuguyn00.model.AvailableActionsDto;
 
 public class ActionValidationService {
     private final Game game;
@@ -29,7 +30,7 @@ public class ActionValidationService {
             return Result.failure("No unit found at source position.");
         }
 
-        if (!unit.getPlayer().equals(game.getCurrentPlayer())) {
+        if (unit.getPlayer() != game.getCurrentPlayer()) {
             return Result.failure("Selected unit does not belong to current player.");
         }
 
@@ -60,7 +61,7 @@ public class ActionValidationService {
             return Result.failure("No derfender found.");
         }
 
-        if (attacker.getPlayer().equals(target.getPlayer())) {
+        if (attacker.getPlayer() == target.getPlayer()) {
             return Result.failure("Cannot attack friendly unit.");
         }
 
@@ -109,7 +110,7 @@ public class ActionValidationService {
             return Result.failure("Only infantry can capture buildings.");
         }
 
-        if (building.getOwner().equals(unit.getPlayer())) {
+        if (building.getOwner() == unit.getPlayer()) {
             return Result.failure("Cannot capture own building.");
         }
 
@@ -127,11 +128,11 @@ public class ActionValidationService {
             return Result.failure("No building found at purchase position.");
         }
 
-        if (!"Továrna".equals(building.getType())) {
+        if (building.getType() != BuildingType.FACTORY) {
             return Result.failure("Units can only be purchased on factory.");
         }
 
-        if (!building.getOwner().equals(game.getCurrentPlayer())) {
+        if (building.getOwner() != game.getCurrentPlayer()) {
             return Result.failure("Current player does not own this factory.");
         }
 
@@ -150,16 +151,15 @@ public class ActionValidationService {
 
     public AvailableActionsDto getAvailableActions(Position from, Position afterMovePosition) {
         if (from == null || afterMovePosition == null) {
-            return new AvailableActionsDto(false, false, List.of());
+            return new AvailableActionsDto(false, List.of());
         }
 
         Unit unit = game.getUnitAt(from);
 
         if (unit == null) {
-            return new AvailableActionsDto(false, false, List.of());
+            return new AvailableActionsDto(false, List.of());
         }
 
-        boolean canWait = game.getReachableTiles(from).contains(afterMovePosition);
         boolean canCapture = canCaptureFromVirtualPosition(unit, afterMovePosition);
 
         List<Position> attackTargets = List.of();
@@ -168,7 +168,7 @@ public class ActionValidationService {
             attackTargets = getAttackTargetsFromVirtualPosition(unit, afterMovePosition);
         }
 
-        return new AvailableActionsDto(canWait, canCapture, attackTargets);
+        return new AvailableActionsDto(canCapture, attackTargets);
     }
 
     private boolean canCaptureFromVirtualPosition(Unit unit, Position position) {
@@ -182,7 +182,7 @@ public class ActionValidationService {
             return false;
         }
 
-        return !building.getOwner().equals(unit.getPlayer());
+        return building.getOwner() != unit.getPlayer();
     }
 
     private Result canAttackFromVirtualPosition(Unit attacker, Position attackerPosition, Position targetPosition) {
@@ -192,7 +192,7 @@ public class ActionValidationService {
             return Result.failure("No defender found.");
         }
 
-        if (attacker.getPlayer().equals(defender.getPlayer())) {
+        if (attacker.getPlayer() == defender.getPlayer()) {
             return Result.failure("Cannot attack friendly unit.");
         }
 
@@ -215,7 +215,7 @@ public class ActionValidationService {
                 continue;
             }
 
-            if (possibleTarget.getPlayer().equals(attacker.getPlayer())) {
+            if (possibleTarget.getPlayer() == attacker.getPlayer()) {
                 continue;
             }
 

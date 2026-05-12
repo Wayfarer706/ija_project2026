@@ -4,6 +4,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import xyuguyn00.common.Position;
+import xyuguyn00.common.enums.BuildingType;
+import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
@@ -46,20 +48,20 @@ public class GameBoardView extends GridPane {
 
             for (int col = 0; col < game.getWidth(); col++) {
                 Position pos = new Position(row, col);
-                char terrainChar = rowStr.charAt(col);
+                TerrainType terrainType = TerrainType.fromSymbol(rowStr.charAt(col));
 
-                StackPane tile = createTile(pos, terrainChar, state);
+                StackPane tile = createTile(pos, terrainType, state);
                 add(tile, col, row);
             }
         }
     }
 
-    private StackPane createTile(Position pos, char terrainChar, BoardViewState state) {
+    private StackPane createTile(Position pos, TerrainType terrainType, BoardViewState state) {
         StackPane tile = new StackPane();
 
         setupTileMouseHandlers(tile, pos, state);
 
-        tile.getChildren().add(tileRenderer.createTerrainBackground(terrainChar));
+        tile.getChildren().add(tileRenderer.createTerrainBackground(terrainType));
         addBuildingOverlay(tile, pos);
         addHighlights(tile, pos, state);
         addPathDot(tile, pos, state);
@@ -102,8 +104,8 @@ public class GameBoardView extends GridPane {
         Building building = game.getBuildingAt(pos);
 
         return building != null
-                && building.getType().equals("Továrna")
-                && building.getOwner().equals(game.getCurrentPlayer());
+            && building.getType() == BuildingType.FACTORY
+            && building.getOwner() == game.getCurrentPlayer();
     }
 
     private void addBuildingOverlay(StackPane tile, Position pos) {

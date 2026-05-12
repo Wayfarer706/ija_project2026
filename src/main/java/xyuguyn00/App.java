@@ -1,5 +1,7 @@
 package xyuguyn00;
 
+import java.nio.file.Path;
+
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -7,6 +9,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.GameFactory;
+import xyuguyn00.handler.GameActionDispatcher;
+import xyuguyn00.service.GameLogService;
 import xyuguyn00.view.*;
 
 /**
@@ -25,9 +29,17 @@ public class App extends Application {
                 "data/units-damage.tsv"
             );
 
+            Path logPath = Path.of("game-log.json");
+
+            GameLogService logService = new GameLogService();
+            logService.startNewLog(game);
+            logService.save(logPath);
+
+            GameActionDispatcher dispatcher = GameActionDispatcher.createDefault(game, logService, logPath);
+
             BorderPane root = new BorderPane();
-            GameView boardView = new GameView(game); 
-            PlayerSidebar sidebar = new PlayerSidebar(game);
+            GameView boardView = new GameView(game, dispatcher); 
+            PlayerSidebar sidebar = new PlayerSidebar(game, dispatcher, logService, logPath, boardView);
 
             root.setLeft(sidebar);
             root.setCenter(boardView);

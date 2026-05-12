@@ -2,7 +2,7 @@ package xyuguyn00.view;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import xyuguyn00.common.UnitType;
+import xyuguyn00.common.enums.UnitType;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;

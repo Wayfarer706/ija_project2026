@@ -1,11 +1,13 @@
 package xyuguyn00.model;
 
+import xyuguyn00.common.enums.TerrainType;
+
 /**
  * Immutable record representing the static rules for a specific terrain type.
  * Movement costs of -1 represent impassable terrain.
  */
 public record TerrainData (
-    String typeName,
+    TerrainType typeName,
     int defenseBonus,
     int infantryCost,
     int vehicleCost

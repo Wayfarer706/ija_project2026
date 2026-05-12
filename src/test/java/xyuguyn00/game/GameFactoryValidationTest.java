@@ -1,6 +1,9 @@
 package xyuguyn00.game;
 
 import org.junit.jupiter.api.Test;
+import xyuguyn00.common.enums.BuildingType;
+import xyuguyn00.common.enums.PlayerId;
+import xyuguyn00.common.enums.UnitType;
 import xyuguyn00.model.GameMapData;
 
 import java.util.List;
@@ -9,7 +12,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class GameFactoryValidationTest {
 
-    private GameMapData createTestMap(List<GameMapData.BuildingInitData> buildings, List<GameMapData.UnitInitData> units) {
+    private GameMapData createTestMap(
+        List<GameMapData.BuildingInitData> buildings,
+        List<GameMapData.UnitInitData> units
+    ) {
         return new GameMapData(
             5, 5,
             List.of(
@@ -24,7 +30,11 @@ public class GameFactoryValidationTest {
         );
     }
 
-    private GameMapData createCustomMap(List<String> layout, List<GameMapData.BuildingInitData> buildings, List<GameMapData.UnitInitData> units) {
+    private GameMapData createCustomMap(
+        List<String> layout,
+        List<GameMapData.BuildingInitData> buildings,
+        List<GameMapData.UnitInitData> units
+    ) {
         return new GameMapData(5, layout.size(), layout, buildings, units);
     }
 
@@ -34,15 +44,16 @@ public class GameFactoryValidationTest {
     public void testValidDataPassesValidation() {
         GameMapData data = createTestMap(
             List.of(
-                new GameMapData.BuildingInitData(1, 1, "Město", "Neutral"),
-                new GameMapData.BuildingInitData(0, 2, "Velitelství", "Player 1"), // Added P1 HQ
-                new GameMapData.BuildingInitData(2, 2, "Velitelství", "Player 2")  // Added P2 HQ
+                new GameMapData.BuildingInitData(1, 1, BuildingType.CITY, PlayerId.NEUTRAL),
+                new GameMapData.BuildingInitData(0, 2, BuildingType.HQ, PlayerId.PLAYER_1),
+                new GameMapData.BuildingInitData(2, 2, BuildingType.HQ, PlayerId.PLAYER_2)
             ),
             List.of(
-                new GameMapData.UnitInitData(0, 0, "Tank", "Player 1"),
-                new GameMapData.UnitInitData(1, 0, "Pěchota", "Player 2")
+                new GameMapData.UnitInitData(0, 0, UnitType.TANK, PlayerId.PLAYER_1),
+                new GameMapData.UnitInitData(1, 0, UnitType.INFANTRY, PlayerId.PLAYER_2)
             )
         );
+
         assertDoesNotThrow(() -> GameFactory.validateMapData(data));
     }
 
@@ -57,13 +68,14 @@ public class GameFactoryValidationTest {
                 "P P P P P"
             ),
             List.of(
-                new GameMapData.BuildingInitData(0, 2, "Velitelství", "Player 1"),
-                new GameMapData.BuildingInitData(2, 2, "Velitelství", "Player 2")
+                new GameMapData.BuildingInitData(0, 2, BuildingType.HQ, PlayerId.PLAYER_1),
+                new GameMapData.BuildingInitData(2, 2, BuildingType.HQ, PlayerId.PLAYER_2)
             ),
             List.of(
-                new GameMapData.UnitInitData(1, 0, "Pěchota", "Player 1")
+                new GameMapData.UnitInitData(1, 0, UnitType.INFANTRY, PlayerId.PLAYER_1)
             )
         );
+
         assertDoesNotThrow(() -> GameFactory.validateMapData(data));
     }
 
@@ -74,10 +86,11 @@ public class GameFactoryValidationTest {
         GameMapData data = createTestMap(
             List.of(),
             List.of(
-                new GameMapData.UnitInitData(2, 2, "Tank", "Player 1"),
-                new GameMapData.UnitInitData(2, 2, "Pěchota", "Player 2") // Illegal: Stacked
+                new GameMapData.UnitInitData(2, 2, UnitType.TANK, PlayerId.PLAYER_1),
+                new GameMapData.UnitInitData(2, 2, UnitType.INFANTRY, PlayerId.PLAYER_2)
             )
         );
+
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("Multiple units placed on the same tile"));
     }
@@ -86,11 +99,12 @@ public class GameFactoryValidationTest {
     public void testBuildingStackingRuleViolationThrowsException() {
         GameMapData data = createTestMap(
             List.of(
-                new GameMapData.BuildingInitData(3, 3, "Město", "Neutral"),
-                new GameMapData.BuildingInitData(3, 3, "Továrna", "Player 1") // Illegal: Stacked
+                new GameMapData.BuildingInitData(3, 3, BuildingType.CITY, PlayerId.NEUTRAL),
+                new GameMapData.BuildingInitData(3, 3, BuildingType.FACTORY, PlayerId.PLAYER_1)
             ),
             List.of()
         );
+
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("Multiple buildings placed on the same tile"));
     }
@@ -99,40 +113,61 @@ public class GameFactoryValidationTest {
 
     @Test
     public void testUnitOutOfBoundsThrowsException() {
-        GameMapData data = createTestMap(List.of(), List.of(new GameMapData.UnitInitData(5, 5, "Tank", "Player 1")));
+        GameMapData data = createTestMap(
+            List.of(),
+            List.of(
+                new GameMapData.UnitInitData(5, 5, UnitType.TANK, PlayerId.PLAYER_1)
+            )
+        );
+
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("completely off the map"));
     }
 
     @Test
     public void testUnitNegativeCoordinatesThrowsException() {
-        GameMapData data = createTestMap(List.of(), List.of(new GameMapData.UnitInitData(-1, 2, "Tank", "Player 1")));
+        GameMapData data = createTestMap(
+            List.of(),
+            List.of(
+                new GameMapData.UnitInitData(-1, 2, UnitType.TANK, PlayerId.PLAYER_1)
+            )
+        );
+
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("completely off the map"));
     }
 
     @Test
     public void testBuildingNegativeCoordinatesThrowsException() {
-        GameMapData data = createTestMap(List.of(new GameMapData.BuildingInitData(2, -1, "Město", "Neutral")), List.of());
+        GameMapData data = createTestMap(
+            List.of(
+                new GameMapData.BuildingInitData(2, -1, BuildingType.CITY, PlayerId.NEUTRAL)
+            ),
+            List.of()
+        );
+
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("completely off the map"));
     }
 
-    // --- 4. Impassable Terrain Tests (The Bugs You Found) ---
+    // --- 4. Impassable Terrain Tests ---
 
     @Test
     public void testUnitOnWaterThrowsException() {
         GameMapData data = createCustomMap(
             List.of(
                 "P P P P P",
-                "P W P P P", 
+                "P W P P P",
                 "P P P P P",
                 "P P P P P",
                 "P P P P P"
             ),
             List.of(),
-            List.of(new GameMapData.UnitInitData(1, 1, "Pěchota", "Player 2")) 
+            List.of(
+                new GameMapData.UnitInitData(1, 1, UnitType.INFANTRY, PlayerId.PLAYER_2)
+            )
         );
+
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("impassable terrain"));
     }
@@ -142,14 +177,17 @@ public class GameFactoryValidationTest {
         GameMapData data = createCustomMap(
             List.of(
                 "P P P P P",
-                "P M P P P", 
+                "P M P P P",
                 "P P P P P",
                 "P P P P P",
                 "P P P P P"
             ),
             List.of(),
-            List.of(new GameMapData.UnitInitData(1, 1, "Tank", "Player 1")) 
+            List.of(
+                new GameMapData.UnitInitData(1, 1, UnitType.TANK, PlayerId.PLAYER_1)
+            )
         );
+
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("Vehicle placed on impassable Mountain"));
     }
@@ -159,14 +197,17 @@ public class GameFactoryValidationTest {
         GameMapData data = createCustomMap(
             List.of(
                 "P P P P P",
-                "P P W P P", 
+                "P P W P P",
                 "P P P P P",
                 "P P P P P",
                 "P P P P P"
             ),
-            List.of(new GameMapData.BuildingInitData(2, 1, "Továrna", "Neutral")), 
+            List.of(
+                new GameMapData.BuildingInitData(2, 1, BuildingType.FACTORY, PlayerId.NEUTRAL)
+            ),
             List.of()
         );
+
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("placed on impassable terrain"));
     }
@@ -178,35 +219,17 @@ public class GameFactoryValidationTest {
         GameMapData data = createCustomMap(
             List.of(
                 "P P P P P",
-                "P P P", // Illegal: Too short
+                "P P P",
                 "P P P P P",
                 "P P P P P",
                 "P P P P P"
             ),
-            List.of(), List.of()
-        );
-        Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
-        assertTrue(exception.getMessage().contains("does not match the 'width' parameter"));
-    }
-
-    @Test
-    public void testInvalidBuildingTypeThrowsException() {
-        GameMapData data = createTestMap(
-            List.of(new GameMapData.BuildingInitData(1, 1, "Tank", "Player 1")), 
+            List.of(),
             List.of()
         );
-        Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
-        assertTrue(exception.getMessage().contains("Invalid building type"));
-    }
 
-    @Test
-    public void testInvalidUnitTypeThrowsException() {
-        GameMapData data = createTestMap(
-            List.of(),
-            List.of(new GameMapData.UnitInitData(1, 1, "Město", "Player 1")) 
-        );
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
-        assertTrue(exception.getMessage().contains("Invalid unit type"));
+        assertTrue(exception.getMessage().contains("does not match the 'width' parameter"));
     }
 
     // --- 6. HQ Rule Tests ---
@@ -215,10 +238,11 @@ public class GameFactoryValidationTest {
     public void testMissingPlayerHQThrowsException() {
         GameMapData data = createTestMap(
             List.of(
-                new GameMapData.BuildingInitData(0, 2, "Velitelství", "Player 1")
+                new GameMapData.BuildingInitData(0, 2, BuildingType.HQ, PlayerId.PLAYER_1)
             ),
             List.of()
         );
+
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("exactly one HQ"));
     }
@@ -227,12 +251,13 @@ public class GameFactoryValidationTest {
     public void testMultiplePlayerHQThrowsException() {
         GameMapData data = createTestMap(
             List.of(
-                new GameMapData.BuildingInitData(0, 2, "Velitelství", "Player 1"),
-                new GameMapData.BuildingInitData(1, 2, "Velitelství", "Player 1"), 
-                new GameMapData.BuildingInitData(2, 2, "Velitelství", "Player 2")
+                new GameMapData.BuildingInitData(0, 2, BuildingType.HQ, PlayerId.PLAYER_1),
+                new GameMapData.BuildingInitData(1, 2, BuildingType.HQ, PlayerId.PLAYER_1),
+                new GameMapData.BuildingInitData(2, 2, BuildingType.HQ, PlayerId.PLAYER_2)
             ),
             List.of()
         );
+
         Exception exception = assertThrows(Exception.class, () -> GameFactory.validateMapData(data));
         assertTrue(exception.getMessage().contains("exactly one HQ"));
     }

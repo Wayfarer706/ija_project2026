@@ -99,3 +99,21 @@
 * **Prompt:** > "I found out that if we parse the json with more than one unit on the same tile it accepts it and only one utnit is rendered on that tile. I think we need to refactor the validation or better let's implement tests for the validation logic to be 100% sure in it's logic and never return to that"
 * **Student Modification:** I found a bug where units overwrite each other if placed on the exact same tile in the JSON. I told the AI to update the validation rules and write a JUnit 5 test suite (GameFactoryValidationTest.java) to check for map borders, impassable terrain, and stacked units. I added this code to the project.
 * **Generation Ratio:** 100% AI.
+
+---
+
+## 11. Game Logging
+* **Tool:** ChatGPT
+* **Date:** May 11, 2026
+* **Prompt:** > I need to log game process (every turn, attack, etc.) to a file. I also need to load game state from this file, move backward and forward. How can I conceptually design this?
+* **Student Modification:** I designed and implemented the logger service, that provides methods for creating snapshots of the current game state, moving backward and forward through saved states, and continuing the game from the selected state.
+* **Generation Ratio:** 25% AI (concept description), 75% (adaptation to the project, implementation of service, and integration with the current codebase.).
+
+---
+
+## 12. .log File Structure
+* **Tool:** ChatGPT
+* **Date:** May 11, 2026
+* **Prompt:** > I need to store data about each player and their turns, including all data about the actual game state, so that it is possible to move to the previous or next turn. How can I do it? Take into account that I do not have any turn identifier.
+* **Student Modification:** I designed and implemented the record classes used for log data representation, including snapshots of the game state, units, buildings, positions, and log entries.
+* **Generation Ratio:** 20% AI (data structures description), 80% (adaptation to the project, implementation of records, and integration with the current codebase.).

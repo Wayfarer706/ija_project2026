@@ -7,13 +7,13 @@ import javafx.scene.layout.GridPane;
 import xyuguyn00.common.GameEvent;
 import xyuguyn00.common.Position;
 import xyuguyn00.common.Result;
-import xyuguyn00.dto.AvailableActionsDto;
-import xyuguyn00.dto.GameActionDto;
-import xyuguyn00.dto.GameActionType;
+import xyuguyn00.common.enums.GameActionType;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
 import xyuguyn00.handler.GameActionDispatcher;
+import xyuguyn00.model.AvailableActionsDto;
+import xyuguyn00.model.GameActionDto;
 import xyuguyn00.service.ActionValidationService;
 import xyuguyn00.tool.GameObserver;
 
@@ -45,11 +45,13 @@ public class GameView extends GridPane implements GameObserver {
     private boolean isTargeting = false; 
     private List<Position> validTargets = new ArrayList<>();
 
-    public GameView(Game game) {
+    private boolean replayMode = false;
+
+    public GameView(Game game, GameActionDispatcher dispatcher) {
         this.game = game;
         this.game.addObserver(this); 
         this.setStyle("-fx-alignment: center; -fx-padding: 20; -fx-background-color: #2F4F4F;");
-        this.dispatcher = GameActionDispatcher.createDefault(game);
+        this.dispatcher = dispatcher;
         this.validationService = new ActionValidationService(game);
         this.tileRenderer = new TileRenderer(tileSize);
         this.boardView = new GameBoardView(game, tileRenderer);
@@ -65,7 +67,16 @@ public class GameView extends GridPane implements GameObserver {
         render();
     }
 
+    public void setReplayMode(boolean replayMode) {
+        this.replayMode = replayMode;
+        clearSelection();
+    }
+
     private void handleTileClick(Position clickedPos, MouseEvent event) {   
+        if (replayMode) {
+            return;
+        }
+
         if (isTargeting) {
             if (validTargets.contains(clickedPos)) {
                 Position moveFrom = selectedPosition;
@@ -256,6 +267,10 @@ public class GameView extends GridPane implements GameObserver {
     }
 
     private void showFactoryMenu(Position pos, javafx.scene.Node tile, double screenX, double screenY) {
+        if (replayMode) {
+            return;
+        }
+
         ContextMenu shopMenu = factoryMenuFactory.createFactoryMenu(
                 game::getUnitCost,
                 type -> game.getPlayerFunds(game.getCurrentPlayer()) < game.getUnitCost(type)

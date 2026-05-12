@@ -10,6 +10,9 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import xyuguyn00.common.enums.PlayerId;
+import xyuguyn00.common.enums.TerrainType;
+import xyuguyn00.common.enums.UnitType;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Unit;
 
@@ -20,9 +23,9 @@ public class TileRenderer {
         this.tileSize = tileSize;
     }
 
-    public Rectangle createTerrainBackground(char terrainChar) {
+    public Rectangle createTerrainBackground(TerrainType terrainType) {
         Rectangle background = new Rectangle(tileSize, tileSize);
-        background.setFill(getTerrainColor(terrainChar));
+        background.setFill(getTerrainColor(terrainType));
         background.setStroke(Color.BLACK);
         background.setStrokeWidth(0.5);
         return background;
@@ -33,9 +36,9 @@ public class TileRenderer {
         overlay.setFill(Color.TRANSPARENT);
         overlay.setStrokeWidth(4);
 
-        if (building.getOwner().equals("Player 1")) {
+        if (building.getOwner() == PlayerId.PLAYER_1) {
             overlay.setStroke(Color.DARKBLUE);
-        } else if (building.getOwner().equals("Player 2")) {
+        } else if (building.getOwner() == PlayerId.PLAYER_2) {
             overlay.setStroke(Color.DARKRED);
         } else {
             overlay.setStroke(Color.WHITE);
@@ -85,11 +88,11 @@ public class TileRenderer {
         }
 
         Circle token = new Circle(tileSize / 2.5);
-        token.setFill(unit.getPlayer().equals("Player 1") ? Color.DARKBLUE : Color.DARKRED);
+        token.setFill(unit.getPlayer() == PlayerId.PLAYER_1 ? Color.DARKBLUE : Color.DARKRED);
         token.setStroke(Color.WHITE);
         token.setStrokeWidth(2);
 
-        Text label = new Text(unit.getType().substring(0, 1));
+        Text label = new Text(getUnitSymbol(unit.getUnitType()));
         label.setFill(Color.WHITE);
         label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 
@@ -118,16 +121,23 @@ public class TileRenderer {
         return nodes;
     }
 
-    private Color getTerrainColor(char terrainChar) {
-        return switch (terrainChar) {
-            case 'P' -> Color.web("#90EE90");
-            case 'F' -> Color.web("#228B22");
-            case 'M' -> Color.web("#808080");
-            case 'W' -> Color.web("#4169E1");
-            case 'C' -> Color.web("#D3D3D3");
-            case 'T' -> Color.web("#CD853F");
-            case 'H' -> Color.web("#FFD700");
-            default -> Color.WHITE;
+    private Color getTerrainColor(TerrainType terrainType) {
+        return switch (terrainType) {
+            case PLAIN -> Color.web("#90EE90");
+            case FOREST -> Color.web("#228B22");
+            case MOUNTAIN -> Color.web("#808080");
+            case WATER -> Color.web("#4169E1");
+            case CITY -> Color.web("#D3D3D3");
+            case FACTORY -> Color.web("#CD853F");
+            case HQ -> Color.web("#FFD700");
+        };
+    }
+
+    private String getUnitSymbol(UnitType type) {
+        return switch (type) {
+            case INFANTRY -> "I";
+            case TANK -> "T";
+            case ARTILLERY -> "A";
         };
     }
 }
