@@ -1,4 +1,4 @@
-package xyuguyn00.log;
+package xyuguyn00.logger;
 
 public record PositionSnapshot (
     int x,

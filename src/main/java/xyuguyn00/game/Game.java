@@ -14,14 +14,14 @@ import xyuguyn00.common.enums.GameActionType;
 import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.common.enums.UnitType;
+import xyuguyn00.logger.BuildingSnapshot;
+import xyuguyn00.logger.GameSnapshot;
+import xyuguyn00.logger.UnitSnapshot;
 import xyuguyn00.common.GameEvent;
 import xyuguyn00.tool.GameObserver;
 import xyuguyn00.tool.Observable;
 import xyuguyn00.model.TerrainData;
 import xyuguyn00.model.UnitDamageData;
-import xyuguyn00.log.BuildingSnapshot;
-import xyuguyn00.log.GameSnapshot;
-import xyuguyn00.log.UnitSnapshot;
 import xyuguyn00.service.CombatService;
 import xyuguyn00.service.EconomyService;
 import xyuguyn00.service.PathfindingService;
@@ -143,7 +143,7 @@ public class Game implements Observable {
             
             // Check Win Condition
             if (building.getType() == BuildingType.HQ) {
-                System.out.println(unit.getPlayer() + " WINS THE GAME!");
+            fireGameEvent(null, "GAME_OVER:" + unit.getPlayer().label());
             }
         }
 

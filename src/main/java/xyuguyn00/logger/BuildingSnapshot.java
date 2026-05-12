@@ -1,4 +1,4 @@
-package xyuguyn00.log;
+package xyuguyn00.logger;
 
 import xyuguyn00.common.enums.BuildingType;
 import xyuguyn00.common.enums.PlayerId;

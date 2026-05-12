@@ -12,12 +12,15 @@
   ],
   "buildings": [
     { "x": 3, "y": 4, "type": "Město", "owner": "Neutral" },
+    { "x": 3, "y": 5, "type": "Město", "owner": "Neutral" },
     { "x": 4, "y": 4, "type": "Továrna", "owner": "Player 1" },
+    { "x": 4, "y": 6, "type": "Továrna", "owner": "Player 2" },
     { "x": 5, "y": 4, "type": "Velitelství", "owner": "Player 1" },
     { "x": 0, "y": 6, "type": "Velitelství", "owner": "Player 2" }
   ],
   "units": [
     { "x": 1, "y": 1, "type": "Pěchota", "owner": "Player 1" },
+    { "x": 3, "y": 6, "type": "Pěchota", "owner": "Player 2" },
     { "x": 1, "y": 3, "type": "Tank", "owner": "Player 1" },
     { "x": 4, "y": 5, "type": "Dělostřelectvo", "owner": "Player 1" },
     { "x": 3, "y": 3, "type": "Tank", "owner": "Player 2" }
