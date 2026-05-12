@@ -2,9 +2,9 @@
   "width": 7,
   "height": 7,
   "layout": [
-    "P P P M M W P",
-    "P P P M M W P",
-    "P P F P P W P",
+    "P P M M P P P",
+    "P P M M W W P",
+    "P P F P W W P",
     "P F F P P P P",
     "P P P C T H P",
     "P P P P P P P",
