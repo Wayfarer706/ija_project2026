@@ -9,8 +9,8 @@ import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
 import xyuguyn00.handler.GameActionDispatcher;
-import xyuguyn00.model.AvailableActionsDto;
-import xyuguyn00.model.GameActionDto;
+import xyuguyn00.model.dto.AvailableActionsDto;
+import xyuguyn00.model.dto.GameActionDto;
 import xyuguyn00.service.ActionValidationService;
 
 import java.util.List;

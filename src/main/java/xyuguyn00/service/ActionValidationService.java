@@ -10,7 +10,7 @@ import xyuguyn00.common.enums.UnitType;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
-import xyuguyn00.model.AvailableActionsDto;
+import xyuguyn00.model.dto.AvailableActionsDto;
 
 public class ActionValidationService {
     private final Game game;

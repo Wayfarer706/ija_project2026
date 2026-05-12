@@ -1,4 +1,4 @@
-package xyuguyn00.model;
+package xyuguyn00.model.data;
 
 import xyuguyn00.common.enums.MovementType;
 import xyuguyn00.common.enums.UnitType;

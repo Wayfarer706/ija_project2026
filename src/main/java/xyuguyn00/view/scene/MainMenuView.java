@@ -9,6 +9,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import xyuguyn00.common.enums.GameMode;
+import xyuguyn00.view.render.ViewConstants; 
 
 import java.util.function.BiConsumer;
 
@@ -16,28 +17,27 @@ public class MainMenuView extends VBox {
 
     public MainMenuView(BiConsumer<GameMode, String> onModeSelected) {
         this.setAlignment(Pos.CENTER);
-        this.setSpacing(20);
+        this.setSpacing(ViewConstants.PADDING_MEDIUM); 
         this.setStyle("-fx-background-color: #2F4F4F;");
 
         Text title = new Text("Advance Wars Clone");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 36));
+        title.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_TITLE));
         title.setFill(Color.WHITE);
 
-        // Create the Map Selector
         ComboBox<String> mapSelector = new ComboBox<>();
         mapSelector.getItems().addAll("game_stats.json", "game_stats_2.json");
         mapSelector.setValue("game_stats.json");
-        mapSelector.setStyle("-fx-font-size: 16px; -fx-pref-width: 300px;");
+        mapSelector.setStyle(String.format("-fx-font-size: %dpx; -fx-pref-width: %dpx;", 
+                ViewConstants.FONT_SIZE_MEDIUM, ViewConstants.BUTTON_WIDTH_LARGE));
 
         Text mapLabel = new Text("Select Map:");
-        mapLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        mapLabel.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_MEDIUM));
         mapLabel.setFill(Color.WHITE);
 
         VBox mapSelectionBox = new VBox(5, mapLabel, mapSelector);
         mapSelectionBox.setAlignment(Pos.CENTER);
-        mapSelectionBox.setSpacing(10);
+        mapSelectionBox.setSpacing(ViewConstants.PADDING_SMALL);
 
-        // Pass the selected map value when a mode is clicked
         Button pvpBtn = createMenuButton("Player 1 vs Player 2", () -> onModeSelected.accept(GameMode.PLAYER_VS_PLAYER, mapSelector.getValue()));
         Button pvbBtn = createMenuButton("Player 1 vs Bot", () -> onModeSelected.accept(GameMode.PLAYER_VS_BOT, mapSelector.getValue()));
         Button bvbBtn = createMenuButton("Bot vs Bot (Spectate)", () -> onModeSelected.accept(GameMode.BOT_VS_BOT, mapSelector.getValue()));
@@ -47,9 +47,9 @@ public class MainMenuView extends VBox {
 
     private Button createMenuButton(String text, Runnable action) {
         Button btn = new Button(text);
-        btn.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-        btn.setPrefWidth(300);
-        btn.setPrefHeight(50);
+        btn.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_MEDIUM));
+        btn.setPrefWidth(ViewConstants.BUTTON_WIDTH_LARGE);
+        btn.setPrefHeight(ViewConstants.BUTTON_HEIGHT_STANDARD);
         btn.setOnAction(e -> action.run());
         return btn;
     }

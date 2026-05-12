@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import xyuguyn00.common.enums.BuildingType;
 import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.common.enums.UnitType;
-import xyuguyn00.model.GameMapData;
+import xyuguyn00.model.data.GameMapData;
 
 import java.util.List;
 

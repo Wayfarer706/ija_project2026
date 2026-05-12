@@ -17,9 +17,10 @@ import xyuguyn00.common.enums.GameMode;
 import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.game.Game;
 import xyuguyn00.handler.GameActionDispatcher;
-import xyuguyn00.model.GameActionDto;
-import xyuguyn00.service.GameLogService;
+import xyuguyn00.logger.GameLogService;
+import xyuguyn00.model.dto.GameActionDto;
 import xyuguyn00.tool.GameObserver;
+import xyuguyn00.view.render.ViewConstants;
 
 public class PlayerSidebar extends VBox implements GameObserver {
     private final Game game;
@@ -47,19 +48,19 @@ public class PlayerSidebar extends VBox implements GameObserver {
         this.logPath = logPath;
         this.gameView = gameView;
 
-        this.setPadding(new Insets(20));
-        this.setSpacing(30);
+        this.setPadding(new Insets(ViewConstants.PADDING_MEDIUM)); 
+        this.setSpacing(ViewConstants.PADDING_LARGE); 
         this.setAlignment(Pos.TOP_CENTER);
         this.setStyle("-fx-background-color: #2b2b2b;"); 
-        this.setPrefWidth(200);
+        this.setPrefWidth(ViewConstants.SIDEBAR_WIDTH); 
 
         p1GoldText = new Text("Gold: 0");
         p1GoldText.setFill(Color.GOLD);
-        p1GoldText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        p1GoldText.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_SMALL));
         
         p2GoldText = new Text("Gold: 0");
         p2GoldText.setFill(Color.GOLD);
-        p2GoldText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        p2GoldText.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_SMALL));
 
         player1Card = createPlayerCard(PlayerId.PLAYER_1.label(), Color.DARKBLUE, p1GoldText);
         player2Card = createPlayerCard(PlayerId.PLAYER_2.label(), Color.DARKRED, p2GoldText);
@@ -94,7 +95,7 @@ public class PlayerSidebar extends VBox implements GameObserver {
             }
         });
 
-        endTurnBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        endTurnBtn.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_SMALL));
         endTurnBtn.setMaxWidth(Double.MAX_VALUE);
         endTurnBtn.setOnAction(e -> {
             var result = this.dispatcher.dispatch(
@@ -112,7 +113,7 @@ public class PlayerSidebar extends VBox implements GameObserver {
         if (mode == GameMode.BOT_VS_BOT) {
             Button pauseResumeBtn = new Button("Pause");
             pauseResumeBtn.setMaxWidth(Double.MAX_VALUE);
-            pauseResumeBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            pauseResumeBtn.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_SMALL));
             
             pauseResumeBtn.setOnAction(e -> {
                 if (pauseResumeBtn.getText().equals("Pause")) {
@@ -143,13 +144,13 @@ public class PlayerSidebar extends VBox implements GameObserver {
     }
 
     private VBox createPlayerCard(String playerName, Color themeColor, Text goldText) {
-        VBox card = new VBox(10);
+        VBox card = new VBox(ViewConstants.PADDING_SMALL); 
         card.setPadding(new Insets(15));
         card.setAlignment(Pos.CENTER);
         
         Text nameText = new Text(playerName);
         nameText.setFill(themeColor);
-        nameText.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        nameText.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_MEDIUM));
 
         card.getChildren().addAll(nameText, goldText);
         return card;

@@ -11,6 +11,7 @@ import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
 import xyuguyn00.view.render.TileRenderer;
+import xyuguyn00.view.render.ViewConstants;
 import xyuguyn00.view.state.BoardViewState;
 
 import java.util.List;
@@ -67,7 +68,7 @@ public class GameBoardView extends StackPane {
 
                 // Create a container strictly for the dynamic elements of this specific tile
                 StackPane tileDynamicContent = new StackPane();
-                tileDynamicContent.setPrefSize(60, 60); 
+                tileDynamicContent.setPrefSize(ViewConstants.TILE_SIZE, ViewConstants.TILE_SIZE);
 
                 // Attach mouse handlers to this top layer so it catches all user input
                 setupTileMouseHandlers(tileDynamicContent, pos, state);

@@ -1,4 +1,4 @@
-package xyuguyn00.service;
+package xyuguyn00.logger;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -13,13 +13,7 @@ import xyuguyn00.common.Position;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Game;
 import xyuguyn00.game.Unit;
-import xyuguyn00.logger.BuildingSnapshot;
-import xyuguyn00.logger.GameLogData;
-import xyuguyn00.logger.GameLogEntry;
-import xyuguyn00.logger.GameSnapshot;
-import xyuguyn00.logger.PositionSnapshot;
-import xyuguyn00.logger.UnitSnapshot;
-import xyuguyn00.model.GameActionDto;
+import xyuguyn00.model.dto.GameActionDto;
 
 public class GameLogService {
     private final ObjectMapper mapper;

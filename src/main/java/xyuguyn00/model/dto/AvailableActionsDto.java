@@ -1,4 +1,4 @@
-package xyuguyn00.model;
+package xyuguyn00.model.dto;
 
 import java.util.ArrayList;
 import java.util.Collections;

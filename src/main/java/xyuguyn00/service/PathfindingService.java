@@ -10,7 +10,7 @@ import java.util.PriorityQueue;
 import xyuguyn00.common.Position;
 import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.game.Unit;
-import xyuguyn00.model.TerrainData;
+import xyuguyn00.model.data.TerrainData;
 
 public class PathfindingService {
     private final String[] mapDefinition;

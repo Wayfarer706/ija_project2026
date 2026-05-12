@@ -1,4 +1,4 @@
-package xyuguyn00.model;
+package xyuguyn00.model.dto;
 
 import xyuguyn00.common.Position;
 import xyuguyn00.common.enums.GameActionType;

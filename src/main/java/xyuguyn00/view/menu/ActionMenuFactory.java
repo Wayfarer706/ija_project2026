@@ -2,7 +2,7 @@ package xyuguyn00.view.menu;
 
 import javafx.scene.control.ContextMenu;
 import xyuguyn00.game.Building;
-import xyuguyn00.model.AvailableActionsDto;
+import xyuguyn00.model.dto.AvailableActionsDto;
 
 public class ActionMenuFactory {
 

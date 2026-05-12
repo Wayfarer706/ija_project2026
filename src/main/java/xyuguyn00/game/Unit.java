@@ -3,8 +3,8 @@ package xyuguyn00.game;
 import xyuguyn00.common.Position;
 import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.common.enums.UnitType;
-import xyuguyn00.model.UnitData;
-import xyuguyn00.model.TerrainData;
+import xyuguyn00.model.data.UnitData;
+import xyuguyn00.model.data.TerrainData;
 
 /**
  * Represents an active entity on the game board.
