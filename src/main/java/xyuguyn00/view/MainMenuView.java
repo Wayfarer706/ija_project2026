@@ -16,7 +16,7 @@ public class MainMenuView extends VBox {
         this.setSpacing(20);
         this.setStyle("-fx-background-color: #2F4F4F;");
 
-        Text title = new Text("Advance Wars: Java Edition");
+        Text title = new Text("Advance Wars Clone");
         title.setFont(Font.font("Arial", 36));
         title.setStyle("-fx-fill: white; -fx-font-weight: bold;");
 

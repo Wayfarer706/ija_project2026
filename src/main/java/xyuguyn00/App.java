@@ -35,7 +35,7 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
-        this.primaryStage.setTitle("Strategy Game");
+        this.primaryStage.setTitle("Advance Wars Clone");
         showMainMenu();
     }
 
