@@ -5,34 +5,30 @@ import javafx.scene.control.MenuItem;
 import xyuguyn00.common.enums.UnitType;
 
 import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.ToIntFunction;
+import java.util.function.Function;
 
 public class FactoryMenuFactory {
 
     public ContextMenu createFactoryMenu(
-            ToIntFunction<UnitType> costProvider,
-            Predicate<UnitType> disabledPredicate,
+            Function<UnitType, Integer> costProvider,
+            Function<UnitType, Boolean> disabledProvider,
             Consumer<UnitType> onPurchase
     ) {
-        ContextMenu menu = new ContextMenu();
+        ContextMenu menu = MenuUtils.createStyledMenu();
 
         for (UnitType type : UnitType.values()) {
-            int cost = costProvider.applyAsInt(type);
+            int cost = costProvider.apply(type);
+            boolean isDisabled = disabledProvider.apply(type);
 
-            MenuItem item = new MenuItem(type.getCzechName() + " (" + cost + " G)");
-            item.setDisable(disabledPredicate.test(type));
-            item.setOnAction(event -> {
-                menu.hide();
-                onPurchase.accept(type);
-            });
-
+            String text = String.format("Build %s (%d G)", type.name(), cost);
+            
+            MenuItem item = MenuUtils.createMenuItem(text, () -> onPurchase.accept(type));
+            item.setDisable(isDisabled);
+            
             menu.getItems().add(item);
         }
-
-        MenuItem cancelItem = new MenuItem("Zrušit");
-        cancelItem.setOnAction(event -> menu.hide());
-        menu.getItems().add(cancelItem);
+        
+        menu.getItems().add(MenuUtils.createMenuItem("Cancel", menu::hide));
 
         return menu;
     }

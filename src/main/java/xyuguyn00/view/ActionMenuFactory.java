@@ -1,11 +1,11 @@
 package xyuguyn00.view;
 
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
 import xyuguyn00.game.Building;
 import xyuguyn00.model.AvailableActionsDto;
 
 public class ActionMenuFactory {
+
     public ContextMenu createActionMenu(
             AvailableActionsDto actions,
             Building targetBuilding,
@@ -14,28 +14,18 @@ public class ActionMenuFactory {
             Runnable onWait,
             Runnable onCancel
     ) {
-        ContextMenu menu = new ContextMenu();
-        menu.setStyle("-fx-base: #3c3c3c; -fx-font-size: 14px; -fx-font-weight: bold;");
+        ContextMenu menu = MenuUtils.createStyledMenu();
 
         if (actions.canAttack()) {
-            MenuItem attackItem = new MenuItem("Attack");
-            attackItem.setOnAction(e -> onAttack.run());
-            menu.getItems().add(attackItem);
+            menu.getItems().add(MenuUtils.createMenuItem("Attack", onAttack));
         }
 
         if (actions.canCapture() && targetBuilding != null) {
-            MenuItem captureItem = new MenuItem("Capture (" + targetBuilding.getCapturePoints() + " CP)");
-            captureItem.setOnAction(e -> onCapture.run());
-            menu.getItems().add(captureItem);
+            menu.getItems().add(MenuUtils.createMenuItem("Capture", onCapture));
         }
 
-        MenuItem waitItem = new MenuItem("Wait");
-        waitItem.setOnAction(e -> onWait.run());
-
-        MenuItem cancelItem = new MenuItem("Cancel");
-        cancelItem.setOnAction(e -> onCancel.run());
-
-        menu.getItems().addAll(waitItem, cancelItem);
+        menu.getItems().add(MenuUtils.createMenuItem("Wait", onWait));
+        menu.getItems().add(MenuUtils.createMenuItem("Cancel", onCancel));
 
         return menu;
     }
