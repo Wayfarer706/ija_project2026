@@ -56,10 +56,10 @@ public class App extends Application {
             assetManager.loadAssets();
             
             Game game = GameFactory.createGame(
-                "data/game_stats.json", 
-                "data/terrain.tsv", 
-                "data/units.tsv",
-                "data/units-damage.tsv"
+                "lib/game_stats.json", 
+                "lib/terrain.tsv", 
+                "lib/units.tsv",
+                "lib/units-damage.tsv"
             );
 
             Path logPath = Path.of("game-log.json");

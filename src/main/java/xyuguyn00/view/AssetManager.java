@@ -32,10 +32,10 @@ public class AssetManager {
     private Image tileSelect;
 
     public void loadAssets() {
-        String terrainPath = "file:data/assets/terrains/";
-        String unitPath = "file:data/assets/units/";
-        String buildingPath = "file:data/assets/buildings/";
-        String otherPath = "file:data/assets/other/";
+        String terrainPath = "file:lib/assets/terrains/";
+        String unitPath = "file:lib/assets/units/";
+        String buildingPath = "file:lib/assets/buildings/";
+        String otherPath = "file:lib/assets/other/";
 
         // Load Standard Terrain
         terrainTextures.put(TerrainType.PLAIN, new Image(terrainPath + "grass.png"));
