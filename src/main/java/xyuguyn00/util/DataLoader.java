@@ -3,7 +3,7 @@ package xyuguyn00.util;
 import xyuguyn00.common.enums.MovementType;
 import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.common.enums.UnitType;
-import xyuguyn00.model.*;
+import xyuguyn00.model.data.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

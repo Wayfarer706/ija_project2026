@@ -5,10 +5,10 @@ import xyuguyn00.common.enums.BuildingType;
 import xyuguyn00.common.enums.PlayerId;
 import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.common.enums.UnitType;
-import xyuguyn00.model.GameMapData;
-import xyuguyn00.model.TerrainData;
-import xyuguyn00.model.UnitDamageData;
-import xyuguyn00.model.UnitData;
+import xyuguyn00.model.data.GameMapData;
+import xyuguyn00.model.data.TerrainData;
+import xyuguyn00.model.data.UnitDamageData;
+import xyuguyn00.model.data.UnitData;
 import xyuguyn00.util.DataLoader;
 
 import java.util.HashSet;

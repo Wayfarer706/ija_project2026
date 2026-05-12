@@ -6,8 +6,8 @@ import java.util.Map;
 import xyuguyn00.common.Position;
 import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.game.Unit;
-import xyuguyn00.model.TerrainData;
-import xyuguyn00.model.UnitDamageData;
+import xyuguyn00.model.data.TerrainData;
+import xyuguyn00.model.data.UnitDamageData;
 
 public class CombatService {
     private final String[] mapDefinition;

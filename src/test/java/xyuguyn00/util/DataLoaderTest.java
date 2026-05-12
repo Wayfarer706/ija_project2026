@@ -8,9 +8,9 @@ import org.junit.jupiter.api.io.TempDir;
 import xyuguyn00.common.enums.MovementType;
 import xyuguyn00.common.enums.TerrainType;
 import xyuguyn00.common.enums.UnitType;
-import xyuguyn00.model.TerrainData;
-import xyuguyn00.model.UnitDamageData;
-import xyuguyn00.model.UnitData;
+import xyuguyn00.model.data.TerrainData;
+import xyuguyn00.model.data.UnitDamageData;
+import xyuguyn00.model.data.UnitData;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

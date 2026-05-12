@@ -117,3 +117,21 @@
 * **Prompt:** > I need to store data about each player and their turns, including all data about the actual game state, so that it is possible to move to the previous or next turn. How can I do it? Take into account that I do not have any turn identifier.
 * **Student Modification:** I designed and implemented the record classes used for log data representation, including snapshots of the game state, units, buildings, positions, and log entries.
 * **Generation Ratio:** 20% AI (data structures description), 80% (adaptation to the project, implementation of records, and integration with the current codebase.).
+
+---
+
+## 13. Main Menu & Game Over Overlay
+* **Tool:** Gemini
+* **Date:** May 12, 2026
+* **Prompt:** > We need a main menu with 3 modes (PvP, PvB, BvB). Also, we need a pop-up window to appear when someone captures the enemy HQ, with Retry and Return to Menu buttons.
+* **Student Modification:** AI helped structure the JavaFX scene switching (`App.java`) and the global `GameObserver` trigger for the end-game condition. I adapted the UI styling, constructed the layouts, and handled the clean-up logic to safely stop background game loops when returning to the menu.
+* **Generation Ratio:** 60% AI (scene management logic), 40% Student (UI layout and styling).
+
+---
+
+## 14. Texture Rendering Bug Fixes (Layering & Auto-tiling)
+* **Tool:** Gemini
+* **Date:** May 12, 2026
+* **Prompt:** > Mountains and forest tiles should have something under them like grass. Water textures are not generated at all.
+* **Student Modification:** AI diagnosed that JavaFX `StackPane` rendering required an explicit bottom layer for transparent textures, and found a flipped Row/Column coordinate bug causing out-of-bounds errors for the water auto-tiling. I applied these fixes directly to the `TileRenderer` and verified the seamless terrain connections across the map grid.
+* **Generation Ratio:** 80% AI (bug diagnosis), 20% Student (code application and verification).

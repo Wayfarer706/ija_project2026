@@ -1,10 +1,9 @@
 package xyuguyn00.handler;
 
 import xyuguyn00.game.Game;
-import xyuguyn00.model.GameActionDto;
+import xyuguyn00.model.dto.GameActionDto;
 import xyuguyn00.common.Result;
 import xyuguyn00.common.enums.GameActionType;
-import xyuguyn00.common.GameActionHandler;
 import xyuguyn00.common.Position;
 import xyuguyn00.service.ActionValidationService;
 

@@ -2,13 +2,12 @@ package xyuguyn00.handler;
 
 import java.util.List;
 
-import xyuguyn00.common.GameActionHandler;
 import xyuguyn00.common.Result;
 import xyuguyn00.game.Game;
+import xyuguyn00.logger.GameLogService;
 import xyuguyn00.logger.GameSnapshot;
-import xyuguyn00.model.GameActionDto;
+import xyuguyn00.model.dto.GameActionDto;
 import xyuguyn00.service.ActionValidationService;
-import xyuguyn00.service.GameLogService;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
