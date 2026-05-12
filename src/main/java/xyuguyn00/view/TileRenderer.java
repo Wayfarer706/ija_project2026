@@ -4,140 +4,194 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javafx.scene.Node;
+import javafx.scene.layout.StackPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
-import xyuguyn00.common.enums.PlayerId;
+import xyuguyn00.common.Position;
 import xyuguyn00.common.enums.TerrainType;
-import xyuguyn00.common.enums.UnitType;
 import xyuguyn00.game.Building;
 import xyuguyn00.game.Unit;
 
 public class TileRenderer {
     private final int tileSize;
+    private final AssetManager assetManager;
 
-    public TileRenderer(int tileSize) {
+    public TileRenderer(int tileSize, AssetManager assetManager) {
         this.tileSize = tileSize;
+        this.assetManager = assetManager;
     }
 
-    public Rectangle createTerrainBackground(TerrainType terrainType) {
-        Rectangle background = new Rectangle(tileSize, tileSize);
-        background.setFill(getTerrainColor(terrainType));
-        background.setStroke(Color.BLACK);
-        background.setStrokeWidth(0.5);
-        return background;
+    public Node createTerrainBackground(TerrainType terrainType, Position pos, String[] map) {
+        int row = pos.getX();
+        int col = pos.getY();
+
+        if (terrainType == TerrainType.FOREST || terrainType == TerrainType.MOUNTAIN) {
+            javafx.scene.layout.StackPane layeredTile = new javafx.scene.layout.StackPane();
+
+            ImageView baseGrass = new ImageView(assetManager.getGrassVariation(col, row));
+            baseGrass.setFitWidth(tileSize);
+            baseGrass.setFitHeight(tileSize);
+            baseGrass.setSmooth(false);
+
+            ImageView topFeature = new ImageView(assetManager.getTerrain(terrainType));
+            topFeature.setFitWidth(tileSize);
+            topFeature.setFitHeight(tileSize);
+            topFeature.setSmooth(false);
+
+            layeredTile.getChildren().addAll(baseGrass, topFeature);
+            return layeredTile;
+        }
+
+        Image texture;
+        if (terrainType == TerrainType.WATER) {
+            // Pass the map array to the helper method
+            boolean up = isWater(row - 1, col, map);
+            boolean down = isWater(row + 1, col, map);
+            boolean left = isWater(row, col - 1, map);
+            boolean right = isWater(row, col + 1, map);
+            texture = assetManager.getContextualWater(up, down, left, right);
+        } 
+        else if (terrainType == TerrainType.PLAIN || terrainType == TerrainType.CITY || terrainType == TerrainType.FACTORY || terrainType == TerrainType.HQ) {
+            texture = assetManager.getGrassVariation(col, row);
+        } 
+        else {
+            texture = assetManager.getTerrain(terrainType);
+        }
+
+        ImageView imageView = new ImageView(texture);
+        imageView.setFitWidth(tileSize);
+        imageView.setFitHeight(tileSize);
+        imageView.setSmooth(false); 
+        return imageView;
+    }
+
+    // Helper method now uses the passed-in map array
+    private boolean isWater(int checkRow, int checkCol, String[] map) {
+        if (checkRow < 0 || checkRow >= map.length) return true;
+        
+        String mapRow = map[checkRow].replace(" ", "");
+        if (checkCol < 0 || checkCol >= mapRow.length()) return true;
+
+        char symbol = mapRow.charAt(checkCol);
+        return TerrainType.fromSymbol(symbol) == TerrainType.WATER;
     }
 
     public Node createBuildingOverlay(Building building) {
-        Rectangle overlay = new Rectangle(tileSize - 12, tileSize - 12);
-        overlay.setFill(Color.TRANSPARENT);
-        overlay.setStrokeWidth(4);
-
-        if (building.getOwner() == PlayerId.PLAYER_1) {
-            overlay.setStroke(Color.DARKBLUE);
-        } else if (building.getOwner() == PlayerId.PLAYER_2) {
-            overlay.setStroke(Color.DARKRED);
-        } else {
-            overlay.setStroke(Color.WHITE);
-        }
-
-        return overlay;
-    }
-
-    public Node createTargetingHighlight() {
-        Rectangle crosshair = new Rectangle(tileSize, tileSize);
-        crosshair.setFill(Color.rgb(255, 0, 0, 0.4));
-        crosshair.setStroke(Color.RED);
-        crosshair.setStrokeWidth(3);
-        return crosshair;
-    }
-
-    public Node createSelectedHighlight() {
-        Rectangle highlight = new Rectangle(tileSize, tileSize);
-        highlight.setFill(Color.rgb(255, 255, 0, 0.4));
-        return highlight;
-    }
-
-    public Node createReachableHighlight() {
-        Rectangle highlight = new Rectangle(tileSize, tileSize);
-        highlight.setFill(Color.rgb(255, 255, 255, 0.5));
-        highlight.setStroke(Color.WHITE);
-        highlight.setStrokeWidth(2);
-        return highlight;
-    }
-
-    public Node createPathDot() {
-        Circle pathDot = new Circle(tileSize / 8.0);
-        pathDot.setFill(Color.WHITE);
-        pathDot.setOpacity(0.8);
-        return pathDot;
+        ImageView imageView = new ImageView(assetManager.getBuilding(building.getType(), building.getOwner()));
+        imageView.setFitWidth(tileSize);
+        imageView.setFitHeight(tileSize);
+        imageView.setSmooth(false);
+        return imageView;
     }
 
     public List<Node> createUnitNodes(Unit unit, Building buildingOnTile) {
         List<Node> nodes = new ArrayList<>();
 
-        if (buildingOnTile != null && buildingOnTile.getCapturePoints() < 20) {
-            Text cpLabel = new Text("CP: " + buildingOnTile.getCapturePoints());
-            cpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 11));
-            cpLabel.setFill(Color.CYAN);
-            cpLabel.setTranslateY(-22);
-            nodes.add(cpLabel);
+        // Base Unit Texture
+        Image unitImage;
+        if (unit.hasMoved()) {
+            unitImage = assetManager.getUnitMoved(unit.getUnitType());
+        } else {
+            unitImage = assetManager.getUnit(unit.getUnitType(), unit.getPlayer());
         }
 
-        Circle token = new Circle(tileSize / 2.5);
-        token.setFill(unit.getPlayer() == PlayerId.PLAYER_1 ? Color.DARKBLUE : Color.DARKRED);
-        token.setStroke(Color.WHITE);
-        token.setStrokeWidth(2);
+        ImageView unitView = new ImageView(unitImage);
+        unitView.setFitWidth(tileSize - 10); 
+        unitView.setFitHeight(tileSize - 10);
+        unitView.setSmooth(false);
+        nodes.add(unitView);
 
-        Text label = new Text(getUnitSymbol(unit.getUnitType()));
-        label.setFill(Color.WHITE);
-        label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        // CP Badge (Top Left) - Only shows if capturing is in progress
+        if (buildingOnTile != null && buildingOnTile.getCapturePoints() < 20) {
+            StackPane cpBadge = new StackPane();
+            
+            Rectangle cpBg = new Rectangle(24, 14, Color.rgb(0, 100, 200, 0.85)); // Solid blue background
+            cpBg.setArcWidth(4); 
+            cpBg.setArcHeight(4);
+            cpBg.setStroke(Color.WHITE);
+            cpBg.setStrokeWidth(1);
 
-        Text hpLabel = new Text(unit.getHp() + " HP");
+            Text cpLabel = new Text("C:" + buildingOnTile.getCapturePoints());
+            cpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+            cpLabel.setFill(Color.WHITE);
+
+            cpBadge.getChildren().addAll(cpBg, cpLabel);
+            
+            // Push to the top-left corner of the tile
+            cpBadge.setTranslateX(-tileSize / 2.0 + 14);
+            cpBadge.setTranslateY(-tileSize / 2.0 + 9);
+            
+            nodes.add(cpBadge);
+        }
+
+        // HP Badge 
+        StackPane hpBadge = new StackPane();
+        
+        Rectangle hpBg = new Rectangle(22, 14, Color.rgb(0, 0, 0, 0.75)); // Dark background
+        hpBg.setArcWidth(4);
+        hpBg.setArcHeight(4);
+
+        Text hpLabel = new Text(String.valueOf(unit.getHp()));
         hpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
-        hpLabel.setTranslateY(18);
-
+        
+        // Color coding the text based on health status
         if (unit.getHp() > 50) {
             hpLabel.setFill(Color.LIGHTGREEN);
         } else if (unit.getHp() > 20) {
             hpLabel.setFill(Color.YELLOW);
         } else {
             hpLabel.setFill(Color.RED);
+            hpBg.setStroke(Color.RED); 
+            hpBg.setStrokeWidth(1);
         }
 
         if (unit.hasMoved()) {
-            token.setOpacity(0.4);
-            label.setOpacity(0.4);
-            hpLabel.setOpacity(0.4);
+            hpBadge.setOpacity(0.6); 
         }
 
-        nodes.add(token);
-        nodes.add(label);
-        nodes.add(hpLabel);
+        hpBadge.getChildren().addAll(hpBg, hpLabel);
+        
+        // Push to the bottom-right corner of the tile
+        hpBadge.setTranslateX(tileSize / 2.0 - 13);
+        hpBadge.setTranslateY(tileSize / 2.0 - 9);
+
+        nodes.add(hpBadge);
 
         return nodes;
     }
 
-    private Color getTerrainColor(TerrainType terrainType) {
-        return switch (terrainType) {
-            case PLAIN -> Color.web("#90EE90");
-            case FOREST -> Color.web("#228B22");
-            case MOUNTAIN -> Color.web("#808080");
-            case WATER -> Color.web("#4169E1");
-            case CITY -> Color.web("#D3D3D3");
-            case FACTORY -> Color.web("#CD853F");
-            case HQ -> Color.web("#FFD700");
-        };
+    public Circle createPathDot() {
+        Circle dot = new Circle(tileSize / 6.0, Color.WHITE);
+        dot.setOpacity(0.8);
+        return dot;
     }
 
-    private String getUnitSymbol(UnitType type) {
-        return switch (type) {
-            case INFANTRY -> "I";
-            case TANK -> "T";
-            case ARTILLERY -> "A";
-        };
+    public Node createSelectedHighlight() {
+        ImageView highlight = new ImageView(assetManager.getTileSelect());
+        highlight.setFitWidth(tileSize);
+        highlight.setFitHeight(tileSize);
+        highlight.setSmooth(false); 
+        
+        return highlight;
+    }
+
+    public Rectangle createReachableHighlight() {
+        Rectangle highlight = new Rectangle(tileSize, tileSize);
+        highlight.setFill(Color.WHITE);
+        highlight.setOpacity(0.3);
+        return highlight;
+    }
+
+    public Rectangle createTargetingHighlight() {
+        Rectangle highlight = new Rectangle(tileSize, tileSize);
+        highlight.setFill(Color.RED);
+        highlight.setOpacity(0.4);
+        return highlight;
     }
 }

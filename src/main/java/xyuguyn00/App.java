@@ -51,6 +51,9 @@ public class App extends Application {
     private void startGame(GameMode mode) {
         try {
             isGameActive = true; 
+
+            AssetManager assetManager = new AssetManager();
+            assetManager.loadAssets();
             
             Game game = GameFactory.createGame(
                 "data/game_stats.json", 
@@ -66,7 +69,7 @@ public class App extends Application {
             GameActionDispatcher dispatcher = GameActionDispatcher.createDefault(game, logService, logPath);
 
             BorderPane gameLayout = new BorderPane();
-            GameView boardView = new GameView(game, dispatcher); 
+            GameView boardView = new GameView(game, dispatcher, assetManager); 
 
             Runnable togglePause = () -> {
                 isPaused = !isPaused;

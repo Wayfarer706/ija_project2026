@@ -47,13 +47,13 @@ public class GameView extends GridPane implements GameObserver {
 
     private boolean replayMode = false;
 
-    public GameView(Game game, GameActionDispatcher dispatcher) {
+    public GameView(Game game, GameActionDispatcher dispatcher, AssetManager assetManager) {
         this.game = game;
         this.game.addObserver(this); 
         this.setStyle("-fx-alignment: center; -fx-padding: 20; -fx-background-color: #2F4F4F;");
         this.dispatcher = dispatcher;
         this.validationService = new ActionValidationService(game);
-        this.tileRenderer = new TileRenderer(tileSize);
+        this.tileRenderer = new TileRenderer(tileSize, assetManager);
         this.boardView = new GameBoardView(game, tileRenderer);
         this.actionMenuFactory = new ActionMenuFactory();
         this.factoryMenuFactory = new FactoryMenuFactory();
@@ -100,13 +100,13 @@ public class GameView extends GridPane implements GameObserver {
             return;
         }
 
-        // 2. Menu Safety Catch
+        // Menu Safety Catch
         if (activeMenu != null && activeMenu.isShowing()) {
             clearSelection();
             return; 
         }
 
-        // 3. Select a Unit
+        // Select a Unit
         if (selectedPosition == null) {
             Unit unit = game.getUnitAt(clickedPos);
             if (unit != null && unit.getPlayer().equals(game.getCurrentPlayer()) && !unit.hasMoved()) {
@@ -115,7 +115,7 @@ public class GameView extends GridPane implements GameObserver {
                 render(); 
             }
         } 
-        // 4. Preview Move
+        // Preview Move
         else if (previewPosition == null) {
             if (reachablePositions.contains(clickedPos)) {
                 previewPosition = clickedPos; 

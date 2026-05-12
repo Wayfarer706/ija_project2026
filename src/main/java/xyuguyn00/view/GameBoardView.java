@@ -50,18 +50,20 @@ public class GameBoardView extends GridPane {
                 Position pos = new Position(row, col);
                 TerrainType terrainType = TerrainType.fromSymbol(rowStr.charAt(col));
 
-                StackPane tile = createTile(pos, terrainType, state);
+                StackPane tile = createTile(pos, terrainType, state, map); 
                 add(tile, col, row);
             }
         }
     }
 
-    private StackPane createTile(Position pos, TerrainType terrainType, BoardViewState state) {
+    private StackPane createTile(Position pos, TerrainType terrainType, BoardViewState state, String[] map) {
         StackPane tile = new StackPane();
 
         setupTileMouseHandlers(tile, pos, state);
 
-        tile.getChildren().add(tileRenderer.createTerrainBackground(terrainType));
+        // Pass the map to the renderer
+        tile.getChildren().add(tileRenderer.createTerrainBackground(terrainType, pos, map));
+        
         addBuildingOverlay(tile, pos);
         addHighlights(tile, pos, state);
         addPathDot(tile, pos, state);
@@ -119,9 +121,11 @@ public class GameBoardView extends GridPane {
     private void addHighlights(StackPane tile, Position pos, BoardViewState state) {
         if (state.isTargeting() && state.getValidTargets().contains(pos)) {
             tile.getChildren().add(tileRenderer.createTargetingHighlight());
-        } else if (pos.equals(state.getSelectedPosition()) && state.getPreviewPosition() == null) {
+        } 
+        else if (pos.equals(state.getSelectedPosition()) && state.getPreviewPosition() == null) {
             tile.getChildren().add(tileRenderer.createSelectedHighlight());
-        } else if (state.getReachablePositions().contains(pos) && state.getPreviewPosition() == null) {
+        } 
+        else if (state.getReachablePositions().contains(pos) && state.getPreviewPosition() == null) {
             tile.getChildren().add(tileRenderer.createReachableHighlight());
         }
     }
