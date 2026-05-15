@@ -1,3 +1,10 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy, Mariia Zhdaniuk
+ * Description: A universal, immutable payload that encapsulates any user intent 
+ * (Move, Attack, Capture, Purchase). Uses the Builder Design Pattern to cleanly 
+ * construct actions without requiring massive constructors full of null parameters.
+ */
 package xyuguyn00.model.dto;
 
 import xyuguyn00.common.Position;
@@ -44,6 +51,8 @@ public class GameActionDto {
         return unitType;
     }
 
+    // The Builder class allows us to construct an action step-by-step.
+    // E.g., GameActionDto.builder(PURCHASE).to(pos).unitType(type).build();
     public static class Builder {
         private final GameActionType type;
         private Position from;

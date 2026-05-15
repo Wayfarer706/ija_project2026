@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: A modal screen overlay that triggers when a win condition is met. 
+ * Prevents further game interaction while providing the user with end-of-session options.
+ */
 package xyuguyn00.view.scene;
 
 import javafx.geometry.Pos;
@@ -12,7 +18,7 @@ import xyuguyn00.view.render.ViewConstants;
 public class GameOverOverlay extends VBox {
     public GameOverOverlay(String winner, Runnable onRetry, Runnable onMainMenu) {
         this.setAlignment(Pos.CENTER);
-        this.setSpacing(ViewConstants.PADDING_MEDIUM); // Use constant spacing
+        this.setSpacing(ViewConstants.PADDING_MEDIUM); 
         this.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
 
         Text title = new Text("Game Over");

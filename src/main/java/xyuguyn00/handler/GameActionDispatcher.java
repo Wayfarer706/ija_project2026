@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Mariia Zhdaniuk
+ * Description: Intercepts all UI commands, routes them to the correct handler, and automatically 
+ * wraps successful executions in "Before" and "After" snapshots for the replay logger.
+ */
 package xyuguyn00.handler;
 
 import java.util.List;
@@ -41,6 +47,7 @@ public class GameActionDispatcher {
         this.logService = logService;
     }
 
+    // Factory method to wire up all available actions. 
     public static GameActionDispatcher createDefault(Game game, GameLogService logService, Path logFilePath) {
         ActionValidationService validationService = new ActionValidationService(game);
 
@@ -66,12 +73,18 @@ public class GameActionDispatcher {
 
         for (GameActionHandler handler : handlers) {
             if (handler.canHandle(action)) {
+                
+                // Record the exact state of the board before the action
                 GameSnapshot before = logService.createSnapshot(game);
 
+                // Pass the action down the chain to be processed
                 Result result = handler.handle(action);
 
                 if (result.isSuccess()) {
+                    // Record the resulting state if the action was legal
                     GameSnapshot after = logService.createSnapshot(game);
+                    
+                    // Bundle the state transition and save to disk
                     logService.appendAction(action, before, after);
 
                     try {
@@ -80,6 +93,7 @@ public class GameActionDispatcher {
                         return Result.failure("Action was performed, but game log could not be saved: " + e.getMessage());
                     }
 
+                    // Alert the UI that the board has changed and needs a redraw
                     game.fireGameEvent(action.getType(), "Action performed: " + action.getType());
                 }
 

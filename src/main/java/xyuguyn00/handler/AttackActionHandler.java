@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Mariia Zhdaniuk
+ * Description: Orchestrates the complex sequence of a unit moving to a new position 
+ * and subsequently attacking a valid target in a single atomic transaction.
+ */
 package xyuguyn00.handler;
 
 import xyuguyn00.game.Game;
@@ -27,20 +33,18 @@ public class AttackActionHandler implements GameActionHandler {
         Position to = action.getTo();
         Position target = action.getTarget();
 
+        // Validates both the movement path and the subsequent firing range simultaneously
         Result result = validationService.canMoveAndAttack(from, to, target);
-
         if (result.isFailure()) {
             return result;
         }
 
         boolean moved = game.moveUnit(from, to);
-
         if (!moved) {
-            return Result.failure("Unit could not wait at selected position.");
+            return Result.failure("Unit could not move to selected position.");
         }
 
         boolean attacked = game.attack(to, target);
-
         if (!attacked) {
             return Result.failure("Attack could not be performed.");
         }

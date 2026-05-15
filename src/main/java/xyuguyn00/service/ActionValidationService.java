@@ -1,3 +1,10 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy, Mariia Zhdaniuk
+ * Description: The definitive rule-checker for the game. Evaluates user intent 
+ * against the current board state to ensure actions (moving, attacking, capturing) 
+ * are strictly legal before allowing the GameActionDispatcher to execute them.
+ */
 package xyuguyn00.service;
 
 import java.util.ArrayList;
@@ -19,6 +26,8 @@ public class ActionValidationService {
         this.game = game;
     }
 
+    // Returns a Result object instead of a boolean so the UI can display 
+    // the exact error message (e.g., "Target is out of range") to the player.
     public Result canMove(Position from, Position to) {
         if (from == null || to == null) {
             return Result.failure("Move requires from and to positions.");
@@ -58,13 +67,14 @@ public class ActionValidationService {
         }
 
         if (target == null) {
-            return Result.failure("No derfender found.");
+            return Result.failure("No defender found.");
         }
 
         if (attacker.getPlayer() == target.getPlayer()) {
             return Result.failure("Cannot attack friendly unit.");
         }
 
+        // Calculates Manhattan distance (grid-based steps)
         int distance = getDistance(attackerPosition, targetPosition);
 
         if (distance < attacker.getMinAttackRange() || distance > attacker.getMaxAttackRange()) {
@@ -83,10 +93,13 @@ public class ActionValidationService {
 
         Unit attacker = game.getUnitAt(from);
 
+        // Artillery must be set up to fire and cannot "run and gun"
         if (attacker.getUnitType() == UnitType.ARTILLERY && !from.equals(to)) {
             return Result.failure("Artillery cannot move and attack in the same turn.");
         }
 
+        // We check the attack validity from the 'to' position (Virtual Position) 
+        // to ensure it's a legal strike *after* the movement completes.
         return canAttackFromVirtualPosition(attacker, to, target);
     }
 
@@ -149,6 +162,8 @@ public class ActionValidationService {
         return Result.success();
     }
 
+    // Assembles all possible valid actions a unit could take after walking to a specific tile.
+    // Used directly by the UI to populate the contextual action menu.
     public AvailableActionsDto getAvailableActions(Position from, Position afterMovePosition) {
         if (from == null || afterMovePosition == null) {
             return new AvailableActionsDto(false, List.of());
@@ -161,9 +176,9 @@ public class ActionValidationService {
         }
 
         boolean canCapture = canCaptureFromVirtualPosition(unit, afterMovePosition);
-
         List<Position> attackTargets = List.of();
 
+        // Enforce the Artillery constraint on UI target generation
         if (!(unit.getUnitType() == UnitType.ARTILLERY && !from.equals(afterMovePosition))) {
             attackTargets = getAttackTargetsFromVirtualPosition(unit, afterMovePosition);
         }

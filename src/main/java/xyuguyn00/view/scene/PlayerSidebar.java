@@ -1,7 +1,12 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: The main HUD for the players. Manages active turn 
+ * indication, economy tracking, and coordinates the time-travel replay system controls.
+ */
 package xyuguyn00.view.scene;
 
 import java.nio.file.Path;
-
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
@@ -85,6 +90,7 @@ public class PlayerSidebar extends VBox implements GameObserver {
         playFromHereBtn.setMaxWidth(Double.MAX_VALUE);
         playFromHereBtn.setOnAction(e -> {
             try {
+                // Allows players to overwrite history and start a new timeline from a past state
                 this.logService.continueGameFromCurrentReplayState(this.game);
                 this.logService.save(this.logPath);
                 this.gameView.setReplayMode(false);
@@ -109,7 +115,7 @@ public class PlayerSidebar extends VBox implements GameObserver {
             updateReplayControls();
         });
 
-        // Conditionally render the UI based on the Game Mode
+        // The UI structurally adapts based on the mode. Bots don't need manual turn endings.
         if (mode == GameMode.BOT_VS_BOT) {
             Button pauseResumeBtn = new Button("Pause");
             pauseResumeBtn.setMaxWidth(Double.MAX_VALUE);
@@ -181,12 +187,15 @@ public class PlayerSidebar extends VBox implements GameObserver {
     }
 
     private void updateReplayControls() {
+        // Enforce strict state bounds so users cannot break the logger indexing
         boolean canGoBack = this.logService.canStepBackward();
         boolean canGoNext = this.logService.canStepForward();
         boolean isInHistory = !this.logService.isAtLatestState();
 
         backBtn.setDisable(!canGoBack);
         nextBtn.setDisable(!canGoNext);
+        
+        // Mutually exclusive UI states: You can either end your turn (present) or branch the timeline (past)
         playFromHereBtn.setDisable(!isInHistory);
         endTurnBtn.setDisable(isInHistory);
 

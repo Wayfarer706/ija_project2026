@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy, Mariia Zhdaniuk
+ * Description: Identifies the factions on the board. Neutral is strictly used 
+ * for uncaptured buildings and cannot take turns.
+ */
 package xyuguyn00.common.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -14,6 +20,7 @@ public enum PlayerId {
         this.label = label;
     }
 
+    // Encapsulates the turn-cycle logic as a simple state machine directly within the Enum.
     public PlayerId next() {
         return switch (this) {
             case PLAYER_1 -> PLAYER_2;

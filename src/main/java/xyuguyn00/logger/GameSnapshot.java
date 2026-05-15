@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Mariia Zhdaniuk
+ * Description: An immutable, deeply-copied representation of the entire board at a 
+ * specific moment in time. Safe for Jackson to serialize into a complex JSON tree.
+ */
 package xyuguyn00.logger;
 
 import java.util.List;

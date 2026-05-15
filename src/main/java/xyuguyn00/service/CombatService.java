@@ -1,3 +1,10 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy, Mariia Zhdaniuk
+ * Description: Mathematical engine for resolving unit engagements. Calculates base 
+ * damage, applies health and terrain modifiers, handles counter-attacks, and 
+ * manages unit destruction logic.
+ */
 package xyuguyn00.service;
 
 import java.util.List;
@@ -38,8 +45,11 @@ public class CombatService {
             return false;
         }
 
+        // The Initial Strike
         resolveStrike(attacker, defender, defenderPos);
 
+        // The Counter-Attack
+        // A unit can only counter if it survived the initial strike and can reach the attacker
         if (!defender.isDead()) {
             int counterDistance = getDistance(attackerPos, defenderPos);
 
@@ -48,6 +58,7 @@ public class CombatService {
             }
         }
 
+        // Battlefield Cleanup
         if (defender.isDead()) {
             units.remove(defenderPos);
         }
@@ -65,6 +76,9 @@ public class CombatService {
         int baseDamage = findBaseDamage(attacker, defender);
         int defenseBonus = findDefenseBonus(defenderPos);
 
+        // Damage Formula:
+        // 1. Attacker power scales down linearly with their missing HP.
+        // 2. Defender terrain reduces damage by 10% per defense star.
         double hpMultiplier = attacker.getHp() / 100.0;
         double terrainMultiplier = 1.0 - (defenseBonus * 0.1);
 
@@ -83,7 +97,6 @@ public class CombatService {
                 return rule.damage();
             }
         }
-
         return 0;
     }
 

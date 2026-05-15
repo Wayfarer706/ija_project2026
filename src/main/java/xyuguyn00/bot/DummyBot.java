@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: A primitive AI implementation that executes valid moves entirely at random.
+ * Serves as a baseline opponent to test game engine mechanics and validation rules.
+ */
 package xyuguyn00.bot;
 
 import xyuguyn00.common.Position;
@@ -17,9 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-/**
- * A simple AI that plays the game purely via code by dispatching random valid actions.
- */
 public class DummyBot {
     private final Game game;
     private final GameActionDispatcher dispatcher;
@@ -35,9 +38,6 @@ public class DummyBot {
         this.random = new Random();
     }
 
-    /**
-     * Executes a full turn for the bot.
-     */
     public void playTurn() {
         if (game.getCurrentPlayer() != botId) {
             return;
@@ -56,6 +56,7 @@ public class DummyBot {
         Map<Position, Building> buildings = game.getBuildingsSnapshot();
         Map<Position, Unit> units = game.getUnitsSnapshot();
 
+        // Identify all unoccupied factories owned by the bot
         List<Position> myFactories = buildings.values().stream()
             .filter(b -> b.getType() == BuildingType.FACTORY && b.getOwner() == botId)
             .map(Building::getPosition)
@@ -64,6 +65,7 @@ public class DummyBot {
         UnitType[] availableUnits = UnitType.values();
 
         for (Position factoryPos : myFactories) {
+            // A factory cannot spawn a unit if one is already standing on it
             if (units.containsKey(factoryPos)) {
                 continue; 
             }
@@ -78,6 +80,9 @@ public class DummyBot {
                         .unitType(randomUnit)
                         .build()
                 );
+                
+                // Track remaining funds locally during the loop so we don't try 
+                // to purchase things we can no longer afford.
                 funds -= cost; 
             }
         }
@@ -89,7 +94,9 @@ public class DummyBot {
         do {
             actionTaken = false;
             
-            // Re-fetch units each iteration because purchases or previous actions update the state
+            // We must re-fetch the unit map on every single iteration.
+            // Executing an attack or capture modifies the game state, meaning
+            // caching the list outside this loop would lead to stale data errors.
             List<Position> unmovedUnits = game.getUnitsSnapshot().entrySet().stream()
                 .filter(e -> e.getValue().getPlayer() == botId && !e.getValue().hasMoved())
                 .map(Map.Entry::getKey)
@@ -111,8 +118,12 @@ public class DummyBot {
         }
 
         Position targetPos = reachable.get(random.nextInt(reachable.size()));
+        
+        // Leverage the same validation service the UI uses to determine what this 
+        // unit is legally allowed to do after moving to the target tile.
         AvailableActionsDto actions = validationService.getAvailableActions(startPos, targetPos);
 
+        // Action priority hierarchy: Capture > Attack > Wait
         if (actions.canCapture()) {
             dispatcher.dispatch(
                 GameActionDto.builder(GameActionType.CAPTURE)

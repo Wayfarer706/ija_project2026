@@ -1,3 +1,10 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy, Mariia Zhdaniuk
+ * Description: Abstraction layer responsible for safely instantiating units using 
+ * the parsed TSV data. Prevents the core Game class from needing to hold and 
+ * search through the entire unit ruleset dictionary.
+ */
 package xyuguyn00.game;
 
 import xyuguyn00.common.Position;
@@ -7,9 +14,6 @@ import xyuguyn00.model.data.UnitData;
 
 import java.util.Map;
 
-/**
- * Factory responsible for safely instantiating units using the parsed TSV data.
- */
 public class UnitFactory {
     private final Map<UnitType, UnitData> unitRules;
 
@@ -18,7 +22,7 @@ public class UnitFactory {
     }
 
     /**
-     * Looks up the unit stats by name and constructs a new Unit entity.
+     * Looks up the unit stats by Enum type and constructs a new physical Unit entity.
      */
     public Unit createUnit(UnitType type, PlayerId player, Position position) {
         UnitData data = unitRules.get(type);

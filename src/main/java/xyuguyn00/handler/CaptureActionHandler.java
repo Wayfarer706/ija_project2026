@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Mariia Zhdaniuk
+ * Description: Orchestrates moving an Infantry unit onto a building and 
+ * attempting to reduce its capture points.
+ */
 package xyuguyn00.handler;
 
 import xyuguyn00.game.Game;
@@ -27,25 +33,22 @@ public class CaptureActionHandler implements GameActionHandler {
         Position to = action.getTo();
 
         Result moveResult = validationService.canMove(from, to);
-
         if (moveResult.isFailure()) {
             return moveResult;
         }
 
         boolean moved = game.moveUnit(from, to);
-
         if (!moved) {
-            return Result.failure("Unit could not wait at selected position.");
+            return Result.failure("Unit could not move to selected position.");
         }
 
+        // Validates that the unit is infantry and the building belongs to an enemy
         Result captureResult = validationService.canCapture(to);
-
         if (captureResult.isFailure()) {
             return captureResult;
         }
 
         boolean captured = game.captureBuilding(to);
-
         if (!captured) {
             return Result.failure("Building could not be captured.");
         }

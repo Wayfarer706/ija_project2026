@@ -1,3 +1,10 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy, Mariia Zhdaniuk
+ * Description: Immutable Data Transfer Object (DTO) that bundles the valid actions 
+ * a unit can perform after moving. Used specifically by the InteractionController 
+ * to dynamically populate the right-click action menu.
+ */
 package xyuguyn00.model.dto;
 
 import java.util.ArrayList;
@@ -12,6 +19,7 @@ public class AvailableActionsDto {
 
     public AvailableActionsDto(boolean canCapture, List<Position> attackTargets) {
         this.canCapture = canCapture;
+        // Prevents external modification of the internal list
         this.attackTargets = new ArrayList<>(attackTargets);
     }
 
@@ -24,6 +32,7 @@ public class AvailableActionsDto {
     }
 
     public List<Position> getAttackTargets() {
+        // Ensures the UI cannot accidentally modify the Engine's state
         return Collections.unmodifiableList(attackTargets);
     }
 }

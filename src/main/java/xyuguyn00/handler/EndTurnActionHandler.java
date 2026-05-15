@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Mariia Zhdaniuk
+ * Description: Dispatches the command to flip the active 
+ * player, triggering economy processing and unit untapping logic in the Game Engine.
+ */
 package xyuguyn00.handler;
 
 import xyuguyn00.common.Result;

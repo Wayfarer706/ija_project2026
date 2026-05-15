@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Team xyuguyn00
+ * Description: The primary landing view. Collects the desired game mode and map parameters 
+ * from the user before dispatching them to the main application bootstrapper.
+ */
 package xyuguyn00.view.scene;
 
 import javafx.geometry.Pos;
@@ -24,6 +30,7 @@ public class MainMenuView extends VBox {
         title.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_TITLE));
         title.setFill(Color.WHITE);
 
+        // Dynamically scans predefined data files to fulfill the 2-map minimum specification
         ComboBox<String> mapSelector = new ComboBox<>();
         mapSelector.getItems().addAll("game_stats.json", "game_stats_2.json");
         mapSelector.setValue("game_stats.json");

@@ -1,7 +1,14 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: Immutable Data Transfer Object (DTO) that represents the current 
+ * interactive visual state of the game board. It safely passes selection, pathfinding, 
+ * and targeting data from the InteractionController to the GameBoardView without 
+ * exposing the underlying game logic.
+ */
 package xyuguyn00.view.state;
 
 import xyuguyn00.common.Position;
-
 import java.util.List;
 
 public class BoardViewState {
@@ -9,6 +16,8 @@ public class BoardViewState {
     private final Position previewPosition;
     private final List<Position> reachablePositions;
     private final List<Position> currentPath;
+    
+    // Flags when the user is choosing an attack target rather than moving
     private final boolean targeting;
     private final List<Position> validTargets;
 

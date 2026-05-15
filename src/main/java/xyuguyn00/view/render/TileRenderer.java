@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: The visual translation engine. Converts raw game logic (TerrainType, Unit) 
+ * into fully assembled, layered JavaFX Nodes ready to be injected into the GameBoardView.
+ */
 package xyuguyn00.view.render;
 
 import java.util.ArrayList;
@@ -32,9 +38,11 @@ public class TileRenderer {
         int y = pos.getY();
 
         if (terrainType == TerrainType.FOREST || terrainType == TerrainType.MOUNTAIN) {
+            // Forests and Mountains use transparent backgrounds. We must construct a mini StackPane 
+            // to manually layer a grass tile underneath them to prevent the UI background from bleeding through.
             javafx.scene.layout.StackPane layeredTile = new javafx.scene.layout.StackPane();
 
-            ImageView baseGrass = new ImageView(assetManager.getGrassVariation(y, x));
+            ImageView baseGrass = new ImageView(assetManager.getGrassVariation(x, y));
             baseGrass.setFitWidth(tileSize);
             baseGrass.setFitHeight(tileSize);
             baseGrass.setSmooth(false);
@@ -50,7 +58,6 @@ public class TileRenderer {
 
         Image texture;
         if (terrainType == TerrainType.WATER) {
-            // Pass the map array to the helper method
             boolean up = isWater(x, y - 1, map);
             boolean down = isWater(x, y + 1, map);
             boolean left = isWater(x - 1, y, map);
@@ -58,7 +65,7 @@ public class TileRenderer {
             texture = assetManager.getContextualWater(up, down, left, right);
         } 
         else if (terrainType == TerrainType.PLAIN || terrainType == TerrainType.CITY || terrainType == TerrainType.FACTORY || terrainType == TerrainType.HQ) {
-            texture = assetManager.getGrassVariation(y, x);
+            texture = assetManager.getGrassVariation(x, y);
         } 
         else {
             texture = assetManager.getTerrain(terrainType);
@@ -71,14 +78,14 @@ public class TileRenderer {
         return imageView;
     }
 
-    // Helper method now uses the passed-in map array
-    private boolean isWater(int checkRow, int checkCol, String[] map) {
-        if (checkRow < 0 || checkRow >= map.length) return true;
+    private boolean isWater(int checkX, int checkY, String[] map) {
+        // Treat off-screen coordinates as water so the map borders visually merge into an ocean
+        if (checkY < 0 || checkY >= map.length) return true;
         
-        String mapRow = map[checkRow].replace(" ", "");
-        if (checkCol < 0 || checkCol >= mapRow.length()) return true;
+        String mapRow = map[checkY].replace(" ", "");
+        if (checkX < 0 || checkX >= mapRow.length()) return true;
 
-        char symbol = mapRow.charAt(checkCol);
+        char symbol = mapRow.charAt(checkX);
         return TerrainType.fromSymbol(symbol) == TerrainType.WATER;
     }
 
@@ -93,7 +100,6 @@ public class TileRenderer {
     public List<Node> createUnitNodes(Unit unit, Building buildingOnTile) {
         List<Node> nodes = new ArrayList<>();
 
-        // Base Unit Texture
         Image unitImage;
         if (unit.hasMoved()) {
             unitImage = assetManager.getUnitMoved(unit.getUnitType());
@@ -107,7 +113,7 @@ public class TileRenderer {
         unitView.setSmooth(false);
         nodes.add(unitView);
 
-        // CP Badge (Top Left)
+        // CP Badge rendering logic: Only display when actively being captured to reduce visual clutter
         if (buildingOnTile != null && buildingOnTile.getCapturePoints() < 20) {
             StackPane cpBadge = new StackPane();
             
@@ -122,14 +128,13 @@ public class TileRenderer {
             cpLabel.setFill(Color.WHITE);
 
             cpBadge.getChildren().addAll(cpBg, cpLabel);
-            
             cpBadge.setTranslateX(ViewConstants.CP_OFFSET_X);
             cpBadge.setTranslateY(ViewConstants.CP_OFFSET_Y);
             
             nodes.add(cpBadge);
         }
 
-        // HP Badge (Bottom Right)
+        // HP Badge rendering logic
         StackPane hpBadge = new StackPane();
         
         Rectangle hpBg = new Rectangle(ViewConstants.HP_BADGE_WIDTH, ViewConstants.HP_BADGE_HEIGHT, Color.rgb(0, 0, 0, 0.75)); 
@@ -139,6 +144,7 @@ public class TileRenderer {
         Text hpLabel = new Text(String.valueOf(unit.getHp()));
         hpLabel.setFont(Font.font(ViewConstants.FONT_MAIN, FontWeight.BOLD, ViewConstants.FONT_SIZE_BADGE));
         
+        // Color-code health values to quickly draw the player's eye to critically injured units
         if (unit.getHp() > 50) {
             hpLabel.setFill(Color.LIGHTGREEN);
         } else if (unit.getHp() > 20) {
@@ -154,7 +160,6 @@ public class TileRenderer {
         }
 
         hpBadge.getChildren().addAll(hpBg, hpLabel);
-        
         hpBadge.setTranslateX(ViewConstants.HP_OFFSET_X);
         hpBadge.setTranslateY(ViewConstants.HP_OFFSET_Y);
 

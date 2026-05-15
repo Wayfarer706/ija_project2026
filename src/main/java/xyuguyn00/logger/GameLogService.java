@@ -1,3 +1,10 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Mariia Zhdaniuk
+ * Description: The engine for the Time Travel and Replay system. Records atomic 
+ * state changes and serializes them to JSON. Manages the timeline pointer 
+ * to allow players to step backward/forward through history.
+ */
 package xyuguyn00.logger;
 
 import java.nio.file.Path;
@@ -18,6 +25,8 @@ import xyuguyn00.model.dto.GameActionDto;
 public class GameLogService {
     private final ObjectMapper mapper;
     private GameLogData currentLog;
+    
+    // Tracks the player's current viewing position within the timeline
     private int replayIndex = 0;
 
     public GameLogService() {
@@ -34,6 +43,7 @@ public class GameLogService {
     public GameSnapshot createSnapshot(Game game) {
         List<String> layout = List.of(game.getMapDefinition());
 
+        // Sort the units by X, then Y coordinates before saving. 
         List<UnitSnapshot> units = game.getUnitsSnapshot()
             .entrySet()
             .stream()
@@ -101,6 +111,8 @@ public class GameLogService {
         );
 
         currentLog.actions().add(entry);
+        
+        // Automatically snap the viewing pointer to the newest action
         replayIndex = currentLog.actions().size();
     }
 
@@ -121,11 +133,9 @@ public class GameLogService {
 
     public void stepForward(Game game) {
         ensureLogStarted();
+        if (!canStepForward()) return;
 
-        if (!canStepForward()) {
-            return;
-        }
-
+        // When moving forward, we restore the "after" state of the current action
         GameLogEntry entry = currentLog.actions().get(replayIndex);
         game.restoreFromSnapshot(entry.after());
         replayIndex++;
@@ -133,25 +143,25 @@ public class GameLogService {
 
     public void stepBackward(Game game) {
         ensureLogStarted();
+        if (!canStepBackward()) return;
 
-        if (!canStepBackward()) {
-            return;
-        }
-
+        // When moving backward, we must decrement the pointer FIRST, 
+        // then restore the "before" state of that action to rewind time.
         replayIndex--;
         GameLogEntry entry = currentLog.actions().get(replayIndex);
         game.restoreFromSnapshot(entry.before());
     } 
 
+    /**
+     * Erases the old "future" and starts recording 
+     * a brand new log starting from the exact moment the player is currently viewing.
+     */
     public void continueGameFromCurrentReplayState(Game game) {
         startNewLog(game);
     }
 
     private PositionSnapshot toSnapshot(Position position) {
-        if (position == null) {
-            return null;
-        }
-
+        if (position == null) return null;
         return new PositionSnapshot(position.getX(), position.getY());
     }
 

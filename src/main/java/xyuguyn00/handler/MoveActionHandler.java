@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Mariia Zhdaniuk
+ * Description: Handles the logic for moving a unit from one tile to another 
+ * without executing any follow-up combat or capture interactions.
+ */
 package xyuguyn00.handler;
 
 import xyuguyn00.game.Game;
@@ -26,14 +32,14 @@ public class MoveActionHandler implements GameActionHandler {
         Position from = action.getFrom();
         Position to = action.getTo();
 
+        // Ensure the movement obeys all terrain and distance rules
         Result result = validationService.canMove(from, to);
-
         if (result.isFailure()) {
             return result;
         }
 
+        // Commit the change to the core engine
         boolean moved = game.moveUnit(from, to);
-
         if (!moved) {
             return Result.failure("Unit could not be moved.");
         }
