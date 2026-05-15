@@ -1,3 +1,11 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: Manages the interactive state machine for the game board. 
+ * Encapsulates all user input logic (clicks, hovers) using the State Pattern 
+ * to eliminate complex nested conditionals and strictly map UI actions to 
+ * the underlying GameActionDispatcher.
+ */
 package xyuguyn00.view.control;
 
 import javafx.scene.control.ContextMenu;
@@ -29,6 +37,7 @@ public class InteractionController {
     private final ActionMenuFactory actionMenuFactory;
     private final FactoryMenuFactory factoryMenuFactory;
 
+    // The active state of the internal State Machine
     private InputState currentState;
     private ContextMenu activeMenu = null;
 
@@ -43,7 +52,8 @@ public class InteractionController {
     }
 
     public void handleTileClick(Position pos, MouseEvent event) {
-        // If a menu is open and the user clicks away, just close the menu and clear.
+        // Clicking anywhere outside an open context menu 
+        // immediately dismisses it and resets the interaction timeline.
         if (activeMenu != null && activeMenu.isShowing()) {
             clearSelection();
             return;
@@ -74,10 +84,13 @@ public class InteractionController {
     }
 
     private void dispatchAction(GameActionDto action) {
+        // Delegates the validated UI intent to the core engine
         Result result = dispatcher.dispatch(action);
         if (result.isFailure()) {
             System.out.println("Action failed: " + result.getMessage());
         }
+        
+        // Clean up the UI state regardless of success/failure
         clearSelection();
     }
 
@@ -141,14 +154,16 @@ public class InteractionController {
             Unit unit = game.getUnitAt(pos);
             Building building = game.getBuildingAt(pos);
 
+            // Initiate movement phase if clicking an available, owned unit
             if (unit != null && unit.getPlayer().equals(game.getCurrentPlayer()) && !unit.hasMoved()) {
                 currentState = new UnitSelectedState(pos);
                 view.requestRender();
             } 
+            // Initiate purchase phase if clicking an empty, owned factory
             else if (building != null 
                     && building.getType() == BuildingType.FACTORY 
                     && building.getOwner().equals(game.getCurrentPlayer())
-                    && unit == null) { // Can't build if a unit is standing on the factory
+                    && unit == null) { 
                 
                 openFactoryMenu(pos, event.getScreenX(), event.getScreenY());
             }
@@ -187,6 +202,7 @@ public class InteractionController {
 
         @Override
         public void handleTileHover(Position pos) {
+            // Only recalculate the Dijkstra path array if the mouse actually moves to a NEW valid tile
             if (reachable.contains(pos) && !pos.equals(hoveredPos)) {
                 hoveredPos = pos;
                 path = game.getPath(selectedPos, pos);
@@ -217,6 +233,7 @@ public class InteractionController {
             this.path = path;
         }
 
+        // Interaction is intentionally frozen while a menu is open. 
         @Override
         public void handleTileClick(Position pos, MouseEvent event) {}
 
@@ -251,7 +268,8 @@ public class InteractionController {
                         .build()
                 );
             } else {
-                // If the user clicks off-target, go back to the action menu
+                // If the user clicks off-target, go back to the 
+                // action menu instead of forcing them to re-plan the entire movement path.
                 openActionMenu(selectedPos, previewPos, event.getScreenX(), event.getScreenY());
             }
         }

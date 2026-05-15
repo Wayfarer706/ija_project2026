@@ -1,13 +1,16 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: Immutable Value Object representing a 2D coordinate on the game board.
+ * Used universally across the Engine, UI, and Pathfinding systems to identify locations.
+ */
 package xyuguyn00.common;
 
 import java.util.Objects;
 
-/**
- * Immutable Value Object representing a 2D coordinate on the game board.
- * By making the fields final, we ensure coordinates cannot be accidentally modified 
- * after creation, preventing unpredictable state changes in the game engine.
- */
 public class Position {
+    // By making the fields final, we ensure coordinates cannot be accidentally modified 
+    // after creation, preventing unpredictable state changes in the game engine.
     private final int x;
     private final int y;
 
@@ -26,9 +29,8 @@ public class Position {
 
     // --- Standard Object Methods ---
     
-    // Overriding equals() and hashCode() is required here because Position 
-    // objects are used as keys in the Game engine's internal HashMap.
-
+    // Overriding equals() and hashCode() is strictly required because Position 
+    // objects are used as the primary lookup keys in the Game engine's internal HashMaps.
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -49,7 +51,8 @@ public class Position {
     }
 
     /**
-     * Formats the position to match the output requirements of the test suite.
+     * Formats the position to perfectly match the JSON logging requirements 
+     * and external test suite expectations.
      */
     @Override
     public String toString() {

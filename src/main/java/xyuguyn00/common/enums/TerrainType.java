@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy, Mariia Zhdaniuk
+ * Description: Maps the visual map grid definition strings (e.g., 'W' for Water) 
+ * and TSV data files ("Voda") to the internal terrain types.
+ */
 package xyuguyn00.common.enums;
 
 import java.util.Arrays;
@@ -19,6 +25,7 @@ public enum TerrainType {
         this.label = label;
     }
 
+    // Resolves single-character map tokens from the JSON layout array
     public static TerrainType fromSymbol(char symbol) {
         for (TerrainType type : values()) {
             if (type.symbol == symbol) {
@@ -29,6 +36,7 @@ public enum TerrainType {
         throw new IllegalArgumentException("Unknown terrain symbol: " + symbol);
     }
 
+    // Resolves localized strings from the terrain.tsv file
     public static TerrainType fromString(String value) {
         return Arrays.stream(values())
             .filter(type -> type.label.equals(value))

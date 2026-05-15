@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: The core visual grid of the game. Implements a layered rendering 
+ * architecture by separating static terrain from rapidly changing dynamic elements (units, highlights).
+ */
 package xyuguyn00.view.scene;
 
 import javafx.scene.Node;
@@ -22,7 +28,6 @@ public class GameBoardView extends StackPane {
     private final Game game;
     private final TileRenderer tileRenderer;
 
-    // Separated layers for massive performance gains
     private final GridPane staticTerrainLayer;
     private final GridPane dynamicLayer;
     private boolean isTerrainInitialized = false;
@@ -37,7 +42,6 @@ public class GameBoardView extends StackPane {
         this.staticTerrainLayer = new GridPane();
         this.dynamicLayer = new GridPane();
         
-        // Stack the layers: Terrain on the bottom, Units/UI on top
         this.getChildren().addAll(staticTerrainLayer, dynamicLayer);
     }
 
@@ -52,13 +56,13 @@ public class GameBoardView extends StackPane {
     public void render(BoardViewState state) {
         String[] map = game.getMapDefinition();
 
-        // Render heavy terrain ONLY on the first frame
+        // Rendering of terrain layer happens only once at the start of the game
         if (!isTerrainInitialized) {
             initializeTerrainLayer(map);
             isTerrainInitialized = true;
         }
 
-        // Clear only the lightweight dynamic elements
+        // The dynamic layer is wiped and redrawn every time the mouse moves.
         dynamicLayer.getChildren().clear();
 
         for (int r = 0; r < map.length; r++) {
@@ -66,14 +70,13 @@ public class GameBoardView extends StackPane {
             for (int c = 0; c < rowString.length(); c++) {
                 Position pos = new Position(c, r);
 
-                // Create a container strictly for the dynamic elements of this specific tile
                 StackPane tileDynamicContent = new StackPane();
                 tileDynamicContent.setPrefSize(ViewConstants.TILE_SIZE, ViewConstants.TILE_SIZE);
 
-                // Attach mouse handlers to this top layer so it catches all user input
+                // Mouse handlers are attached to the dynamic container because it always sits 
+                // on top of the Z-index, guaranteeing it catches all hover/click events.
                 setupTileMouseHandlers(tileDynamicContent, pos, state);
 
-                // Add elements that can change state or position
                 addBuildingOverlay(tileDynamicContent, pos);
                 addHighlights(tileDynamicContent, pos, state);
                 addPathDot(tileDynamicContent, pos, state);
@@ -112,9 +115,10 @@ public class GameBoardView extends StackPane {
     }
 
     private void addBuildingOverlay(StackPane tile, Position pos) {
-        // Buildings are rendered dynamically because their Capture Points and Ownership change
         Building building = game.getBuildingAt(pos);
         if (building != null) {
+            // Buildings must be on the dynamic layer rather than the static layer 
+            // because their textures change immediately when captured by a player.
             tile.getChildren().add(tileRenderer.createBuildingOverlay(building));
         }
     }

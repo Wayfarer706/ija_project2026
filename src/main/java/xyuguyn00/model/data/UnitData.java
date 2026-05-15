@@ -1,11 +1,14 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy, Mariia Zhdaniuk
+ * Description: Immutable record defining the base statistics and capabilities 
+ * of a specific unit class, populated directly from the TSV data files.
+ */
 package xyuguyn00.model.data;
 
 import xyuguyn00.common.enums.MovementType;
 import xyuguyn00.common.enums.UnitType;
 
-/**
- * Immutable record representing the base stats and rules for a unit class.
- */
 public record UnitData (
     UnitType unitType,
     int cost,

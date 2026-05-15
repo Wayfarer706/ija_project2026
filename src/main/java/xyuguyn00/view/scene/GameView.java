@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: Wrapper component that acts as the bridge between the purely visual 
+ * GameBoardView and the logical InteractionController state machine.
+ */
 package xyuguyn00.view.scene;
 
 import javafx.application.Platform;
@@ -17,9 +23,7 @@ public class GameView extends GridPane implements GameObserver {
     private final Game game;
     private final TileRenderer tileRenderer;
     private final GameBoardView boardView;
-    
     private final InteractionController interactionController;
-
     private boolean replayMode = false;
 
     public GameView(Game game, GameActionDispatcher dispatcher, AssetManager assetManager) {
@@ -42,10 +46,12 @@ public class GameView extends GridPane implements GameObserver {
 
     public void setReplayMode(boolean replayMode) {
         this.replayMode = replayMode;
+        // Instantly drop any active menus/selections if the user jumps back in time
         interactionController.clearSelection();
     }
 
     private void handleTileClick(Position clickedPos, MouseEvent event) {   
+        // Guard clause: Prevent the user from moving units while viewing past log states
         if (replayMode) return;
         interactionController.handleTileClick(clickedPos, event);
     }
@@ -56,6 +62,8 @@ public class GameView extends GridPane implements GameObserver {
     }
 
     public void requestRender() {
+        // Platform.runLater ensures that render requests fired by background threads 
+        // (like the AI bots) are safely synchronized with the JavaFX Main Application Thread.
         Platform.runLater(() -> boardView.render(interactionController.getViewState()));
     }
 

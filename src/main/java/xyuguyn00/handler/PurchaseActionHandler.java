@@ -1,3 +1,8 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Mariia Zhdaniuk
+ * Description: Handles the economic transaction of spawning a new unit on a factory.
+ */
 package xyuguyn00.handler;
 
 import xyuguyn00.game.Game;
@@ -27,14 +32,13 @@ public class PurchaseActionHandler implements GameActionHandler {
         UnitType unitType = action.getUnitType();
         Position position = action.getTo();
 
+        // Validates factory ownership, tile vacancy, and sufficient funds
         Result result = validationService.canPurchase(unitType, position);
-
         if (result.isFailure()) {
             return result;
         }
 
         boolean purchased = game.purchaseUnit(unitType, position);
-
         if (!purchased) {
             return Result.failure("Unit could not be purchased.");
         }

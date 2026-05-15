@@ -1,12 +1,16 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy, Mariia Zhdaniuk
+ * Description: Represents an interactive structure on the board (City, Factory, HQ).
+ * Manages its own capture state and ownership but leaves the execution of 
+ * economic benefits (income/healing) to the EconomyService.
+ */
 package xyuguyn00.game;
 
 import xyuguyn00.common.Position;
 import xyuguyn00.common.enums.BuildingType;
 import xyuguyn00.common.enums.PlayerId;
 
-/**
- * Represents an interactive building on the board (City, Factory, HQ).
- */
 public class Building {
     private final Position position;
     private final BuildingType type; 
@@ -17,7 +21,7 @@ public class Building {
         this.position = position;
         this.type = type;
         this.owner = owner;
-        this.capturePoints = 20; // All buildings require 20 points to capture
+        this.capturePoints = 20; 
     }
 
     public Position getPosition() { 

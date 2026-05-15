@@ -1,3 +1,11 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy, Mariia Zhdaniuk
+ * Description: The Central Facade for the core game engine. Holds the absolute 
+ * "source of truth" regarding the board state (units, buildings, funds) and 
+ * coordinates complex operations by delegating math to specialized services 
+ * (CombatService, PathfindingService).
+ */
 package xyuguyn00.game;
 
 import java.util.ArrayList;
@@ -26,24 +34,21 @@ import xyuguyn00.service.CombatService;
 import xyuguyn00.service.EconomyService;
 import xyuguyn00.service.PathfindingService;
 
-/**
- * Main engine and state manager for the game.
- * Now fully decoupled: relies on injected UnitFactory and TerrainData rules.
- */
 public class Game implements Observable {
     private final String[] mapDefinition;
     private final Map<Position, Unit> units = new HashMap<>();
     private final Map<Position, Building> buildings = new HashMap<>();
     private final Map<PlayerId, Integer> playerFunds = new EnumMap<>(PlayerId.class);
     private final List<GameObserver> observers = new ArrayList<>();
+    
     private final int width;
     private final int height;
+    
     private final CombatService combatService;
     private final PathfindingService pathfindingService;
     private final EconomyService economyService;
     private PlayerId currentPlayer = PlayerId.PLAYER_1; 
 
-    // Data-driven dependencies
     private final UnitFactory unitFactory;
 
     public Game(String[] mapDefinition, UnitFactory unitFactory, Map<TerrainType, TerrainData> terrainRules, List<UnitDamageData> damageRules) {
@@ -51,6 +56,8 @@ public class Game implements Observable {
         this.width = mapDefinition[0].replace(" ", "").length();
         this.height = mapDefinition.length;
         this.unitFactory = unitFactory;
+        
+        // Initialize math and rule engines
         this.combatService = new CombatService(mapDefinition, terrainRules, damageRules);
         this.pathfindingService = new PathfindingService(mapDefinition, terrainRules);
         this.economyService = new EconomyService();
@@ -89,12 +96,13 @@ public class Game implements Observable {
         notifyObservers(new GameEvent(actionType, message));
     }
 
-    // --- Core Game Logic & Pathfinding ---
+    // --- Core Game Logic ---
 
     public boolean moveUnit(Position from, Position to) {
         Unit unit = units.get(from);
         if (unit == null || unit.hasMoved()) return false;
 
+        // If a unit walks off a building it was trying to capture, all capture progress is lost
         if (!from.equals(to)) {
             Building startingTileBuilding = buildings.get(from);
             if (startingTileBuilding != null) {
@@ -114,40 +122,33 @@ public class Game implements Observable {
         return false;
     }
 
-    // --- Combat Logic ---
-
     public boolean attack(Position attackerPos, Position defenderPos) {
-        boolean attacked = combatService.attack(units, attackerPos, defenderPos);
-
-        return attacked;
+        return combatService.attack(units, attackerPos, defenderPos);
     }
 
-    // --- Capture Mechanics ---
     public boolean captureBuilding(Position targetPos) {
         Unit unit = units.get(targetPos);
         Building building = buildings.get(targetPos);
 
-        // Validation: Must have a unit, a building, unit must be Infantry, and building must be enemy/neutral
         if (unit == null || building == null) return false;
         if (unit.getUnitType() != UnitType.INFANTRY) return false;
         if (building.getOwner() == unit.getPlayer()) return false;
 
-        // Math: 10% of current HP rounded down
+        // Capture power is directly proportional to the unit's remaining health
         int captureDamage = (int) Math.floor(unit.getHp() * 0.1);
         building.reduceCapturePoints(captureDamage);
 
-        // Check if capture is complete
         if (building.getCapturePoints() <= 0) {
             building.setOwner(unit.getPlayer());
-            building.resetCapturePoints(); // Reset to 20 for future
+            building.resetCapturePoints();
             
-            // Check Win Condition
+            // Winning Condition: Securing the enemy Headquarters immediately ends the game
             if (building.getType() == BuildingType.HQ) {
-            fireGameEvent(null, "GAME_OVER:" + unit.getPlayer().label());
+                fireGameEvent(null, "GAME_OVER:" + unit.getPlayer().label());
             }
         }
 
-        unit.setMoved(true); // Commits the turn
+        unit.setMoved(true);
         return true;
     }
 
@@ -225,10 +226,8 @@ public class Game implements Observable {
     }
 
     public void endTurn() {
-        // Toggle the active player
         currentPlayer = currentPlayer.next();
         
-        // Reset unit movement for everyone
         for (Unit unit : units.values()) {
             unit.setMoved(false);
         }
@@ -248,6 +247,10 @@ public class Game implements Observable {
         return buildings.get(pos);
     }
 
+    // --- Defensive Copying for the View/Logger ---
+    
+    // We return Collections.unmodifiableMap() to ensure that UI components or the logging 
+    // system cannot accidentally delete units or change funds without going through the dispatcher.
     public Map<Position, Unit> getUnitsSnapshot() {
         return Collections.unmodifiableMap(units);
     }
@@ -260,8 +263,9 @@ public class Game implements Observable {
         return Collections.unmodifiableMap(playerFunds);
     }
 
-    // logging
+    // --- Time Travel / Rewind System ---
     public void restoreFromSnapshot(GameSnapshot snapshot) {
+        // Wipes the current board completely clean to prevent ghost data
         units.clear();
         buildings.clear();
         playerFunds.clear();
@@ -269,6 +273,7 @@ public class Game implements Observable {
         currentPlayer = snapshot.currentPlayer();
         playerFunds.putAll(snapshot.playerFunds());
 
+        // Re-spawns units exactly as they were in the historical snapshot
         for (UnitSnapshot unitSnapshot : snapshot.units()) {
             Position position = new Position(unitSnapshot.x(), unitSnapshot.y());
 
@@ -284,6 +289,7 @@ public class Game implements Observable {
             units.put(position, unit);
         }
 
+        // Re-spawns buildings and restores exact capture point progress
         for (BuildingSnapshot buildingSnapshot : snapshot.buildings()) {
             Position position = new Position(buildingSnapshot.x(), buildingSnapshot.y());
 
@@ -297,6 +303,7 @@ public class Game implements Observable {
             buildings.put(position, building);
         }
 
+        // Tells the JavaFX view to redraw the board immediately
         fireGameEvent(null, "Snapshot restored");
     }
 }

@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Mariia Zhdaniuk
+ * Description: Commits a unit's movement to the board and officially flags it as 
+ * "exhausted" for the remainder of the turn without taking any aggressive actions.
+ */
 package xyuguyn00.handler;
 
 import xyuguyn00.game.Game;
@@ -27,13 +33,11 @@ public class WaitActionHandler implements GameActionHandler {
         Position to = action.getTo();
 
         Result result = validationService.canMove(from, to);
-
         if (result.isFailure()) {
             return result;
         }
 
         boolean moved = game.moveUnit(from, to);
-
         if (!moved) {
             return Result.failure("Unit could not wait at selected position.");
         }

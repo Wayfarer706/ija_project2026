@@ -1,3 +1,10 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: Manages the lifecycle and scheduling of AI opponents. Acts as the 
+ * bridge between the core Game Engine's event system and the JavaFX application thread, 
+ * ensuring bots only take their turns when appropriate.
+ */
 package xyuguyn00.bot;
 
 import javafx.animation.PauseTransition;
@@ -14,6 +21,9 @@ public class BotController {
     private final Game game;
     private final GameActionDispatcher dispatcher;
     private final GameLogService logService;
+    
+    // We use BooleanSuppliers rather than raw booleans so the controller 
+    // always dynamically evaluates the most up-to-date UI state upon request.
     private final BooleanSupplier isGameActiveProvider;
     private final BooleanSupplier isPausedProvider;
 
@@ -35,7 +45,10 @@ public class BotController {
 
         if (mode == GameMode.PLAYER_VS_BOT) {
             game.addObserver(event -> {
+                // Guard clauses prevent the bot from playing if the game is over 
+                // or if the human player is currently rewinding time in replay mode.
                 if (!isGameActiveProvider.getAsBoolean()) return;
+                
                 if (game.getCurrentPlayer() == PlayerId.PLAYER_2 && logService.isAtLatestState()) {
                     triggerBotTurn(bot2);
                 }
@@ -56,11 +69,13 @@ public class BotController {
                 }
             });
 
+            // Kick off the infinite bot loop for the spectate mode
             triggerBotTurn(bot1); 
         }
     }
 
     private void triggerBotTurn(DummyBot bot) {
+        // PauseTransition gives the human player time to visually process what the AI is doing.
         PauseTransition delay = new PauseTransition(Duration.seconds(0.8));
         delay.setOnFinished(e -> {
             if (isGameActiveProvider.getAsBoolean()) {

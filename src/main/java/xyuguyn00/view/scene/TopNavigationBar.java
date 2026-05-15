@@ -1,3 +1,9 @@
+/**
+ * Project: Advance Wars Clone
+ * Authors: Nazar Yuguy
+ * Description: Persistent header component containing structural application controls 
+ * (like the escape/back button) that exist independently of the game board.
+ */
 package xyuguyn00.view.scene;
 
 import javafx.geometry.Insets;
