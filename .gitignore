@@ -14,3 +14,4 @@ git_history.txt
 target/
 
 game-log.json
+dependency-reduced-pom.xml

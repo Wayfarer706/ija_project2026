@@ -1,6 +1,6 @@
 # AI Audit Log - Team xyuguyn00 
 
-**Last Updated:** April 15, 2026
+**Last Updated:** May 15, 2026
 
 ---
 
@@ -135,3 +135,12 @@
 * **Prompt:** > Mountains and forest tiles should have something under them like grass. Water textures are not generated at all.
 * **Student Modification:** AI diagnosed that JavaFX `StackPane` rendering required an explicit bottom layer for transparent textures, and found a flipped Row/Column coordinate bug causing out-of-bounds errors for the water auto-tiling. I applied these fixes directly to the `TileRenderer` and verified the seamless terrain connections across the map grid.
 * **Generation Ratio:** 80% AI (bug diagnosis), 20% Student (code application and verification).
+
+---
+
+# 15. JavaFX Executable JAR & Maven Refactoring
+* **Tool:** Gemini
+* **Date:** May 15, 2026
+* **Prompt:** > "How to fix 'no main manifest attribute' in target jar and remove overlapping META-INF resources warnings during maven packaging? Also, how can I suppress Javadoc warnings for missing method comments while keeping file headers?"
+* **Student Modification:** AI explained the Java 11 module system limitations regarding JavaFX Fat JARs. I implemented the `Launcher.java` workaround to bypass the strict module security check that crashes when the Main Class extends Application. I also refactored the `pom.xml` to use `maven-shade-plugin` for bundling dependencies, added XML filters to strip conflicting `META-INF` files, and configured `maven-javadoc-plugin` with <doclint>none</doclint> to preserve clean code.
+* **Generation Ratio:** 60% AI (Maven configuration and Launcher architectural pattern), 40% Student (implementation, testing, and integration into the existing build pipeline).
